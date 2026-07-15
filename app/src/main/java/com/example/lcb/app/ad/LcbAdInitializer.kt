@@ -46,6 +46,7 @@ object LcbAdInitializer {
         appScope.launch {
             runCatching {
                 AppOpenBiddingInitializer.initialize(application, R.mipmap.ic_launcher) {
+                    externallyInitialized = true
                     googleMobileAds = BillConfig.GoogleMobileAdsConfig(
                         applicationId = BuildConfig.ADMOB_APPLICATION_ID
                     )

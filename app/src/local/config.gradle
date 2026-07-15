@@ -1,12 +1,12 @@
 ext {
     // AdMob配置
-    admob = [applicationId: "ca-app-pub-3940256099942544~3347511713", // 测试应用ID，请替换为实际的AdMob应用ID
+    admob = [applicationId: "ca-app-pub-3916046151571724~4816008368", // 测试应用ID，请替换为实际的AdMob应用ID
              adUnitIds    : [banner      : "ca-app-pub-3940256099942544/9214589741",        // 横幅广告测试ID
-                             interstitial: "ca-app-pub-3940256099942544/1033173712", // 插页广告测试ID
-                             splash      : "ca-app-pub-3940256099942544/9257395921",       // 开屏广告测试ID
-                             native      : "ca-app-pub-3940256099942544/2247696110",        // 原生广告测试ID
-                             full_native : "ca-app-pub-3940256099942544/2247696110",        // 全屏原生广告测试ID
-                             rewarded    : "ca-app-pub-3940256099942544/5224354917"         // 激励广告测试ID
+                             interstitial: "ca-app-pub-3916046151571724/2959404748", // 插页广告测试ID
+                             splash      : "ca-app-pub-3916046151571724/4252438564",       // 开屏广告测试ID
+                             native      : "ca-app-pub-3916046151571724/6199945055",        // 原生广告测试ID
+                             full_native : "ca-app-pub-3916046151571724/5393996392",        // 全屏原生广告测试ID
+                             rewarded    : "ca-app-pub-3916046151571724/6447357068"         // 激励广告测试ID
              ]]
 
     // Google Ad Manager 配置（官方测试 ID）
@@ -19,23 +19,23 @@ ext {
     ]]
 
     // Pangle配置
-    pangle = [applicationId: "8025677", // Pangle测试应用ID
+    pangle = [applicationId: "8801991", // Pangle测试应用ID
               adUnitIds    : [splash      : "890000078",        // 开屏广告测试ID（竖屏）
                               banner      : "980099802",        // 横幅广告测试ID（320x50）
-                              interstitial: "980088188",       // 插页广告测试ID（竖屏）
-                              native      : "980088216",        // 原生广告测试ID
-                              full_native : "980088216",        // 全屏原生广告测试ID
-                              rewarded    : "980088192"         // 激励视频测试ID（竖屏）
+                              interstitial: "982960068",       // 插页广告测试ID（竖屏）
+                              native      : "982960055",        // 原生广告测试ID
+                              full_native : "982960136",        // 全屏原生广告测试ID
+                              rewarded    : "982960054"         // 激励视频测试ID（竖屏）
               ]]
 
     // TopOn配置
-    topon = [applicationId: "a5aa1f9deda26d",           // TopOn 应用 ID（需替换为实际值）
-             appKey       : "4f7b9ac17decb9babec83aac078742c7",          // TopOn 应用密钥（需替换为实际值）
-             adUnitIds    : [interstitial: "b5baca53984692",  // 插页广告位 ID（需替换为实际值）
+    topon = [applicationId: "h1h7t76tddrt25",           // TopOn 应用 ID（需替换为实际值）
+             appKey       : "a5892462779e07420fcf84e9e6b341ece",          // TopOn 应用密钥（需替换为实际值）
+             adUnitIds    : [interstitial: "n1h7t76tg76hja",  // 插页广告位 ID（需替换为实际值）
                              rewarded    : "b5b449fb3d89d7",  // 激励广告位 ID
-                             native      : "b5aa1fa2cae775",  // 原生广告位 ID（需替换为实际值）
-                             splash      : "b5bea7cc9a4497",  // 开屏广告位 ID（需替换为实际值）
-                             full_native : "b5aa1fa501d9f6",  // 全屏原生广告位 ID（需替换为实际值）
+                             native      : "n1h7t76th560qm",  // 原生广告位 ID（需替换为实际值）
+                             splash      : "n1h7t76tevmst6",  // 开屏广告位 ID（需替换为实际值）
+                             full_native : "n1h7t76ti6r9cp",  // 全屏原生广告位 ID（需替换为实际值）
                              banner      : "b5baca4f74c3d8"]  // 横幅广告位 ID（需替换为实际值）
     ]
 

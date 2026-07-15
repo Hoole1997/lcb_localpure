@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# LcbApp 由 Manifest 创建，同时覆写渠道 Launcher SDK 的加固/native 钩子，需保留其类与成员名。
+-keep class com.example.lcb.app.LcbApp { *; }

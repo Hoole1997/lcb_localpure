@@ -17,4 +17,8 @@ class MainActivity : AppCompatActivity() {
             insets
         }
     }
+
+    override fun onBackPressed() {
+        LauncherSdkGateway.returnToLauncher()
+    }
 }
