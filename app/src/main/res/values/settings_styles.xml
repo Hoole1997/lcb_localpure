@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.LCB.Settings" parent="Theme.LCB_Template">
+        <item name="android:windowBackground">#111111</item>
+        <item name="android:colorBackground">#111111</item>
+        <item name="colorSurface">#111111</item>
+    </style>
+
+    <style name="TextAppearance.LCB.Settings.Toolbar" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="ThemeOverlay.LCB.LanguageBottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.LCB.LanguageBottomSheet</item>
+        <item name="android:navigationBarColor">#29292D</item>
+    </style>
+
+    <style name="Widget.LCB.LanguageBottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+    </style>
+</resources>

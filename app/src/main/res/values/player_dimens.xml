@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 短屏基线：压缩留白与唱片尺寸，保证歌词和控制区不重叠。 -->
+    <dimen name="player_toolbar_margin_top">12dp</dimen>
+    <dimen name="player_artwork_margin_top">30dp</dimen>
+    <dimen name="player_artwork_max_size">280dp</dimen>
+    <dimen name="player_text_bottom_inset">60dp</dimen>
+    <dimen name="player_seek_control_gap">10dp</dimen>
+    <dimen name="player_control_bottom_margin">24dp</dimen>
+</resources>

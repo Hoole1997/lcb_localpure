@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    全屏连续背景。所有光晕都覆盖完整画布并通过透明度自然衰减，
+    不再使用固定 bottom 裁切，避免 RecyclerView 滚动时出现横向隔断。
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#111113" />
+        </shape>
+    </item>
+
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:centerX="0.68"
+                android:centerY="0.0"
+                android:gradientRadius="620dp"
+                android:startColor="#D9B84FE0"
+                android:centerColor="#75472E8D"
+                android:endColor="#00111113" />
+        </shape>
+    </item>
+
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:centerX="1.0"
+                android:centerY="0.1"
+                android:gradientRadius="500dp"
+                android:startColor="#8A4D74D2"
+                android:centerColor="#45234679"
+                android:endColor="#00111113" />
+        </shape>
+    </item>
+</layer-list>

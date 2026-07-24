@@ -1,6 +1,10 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.room)
+    alias(libs.plugins.google.ksp)
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.google.firebase.crashlytics)
 }
@@ -46,6 +50,19 @@ fun secretValue(name: String): String {
         ?: System.getenv(name)?.trim().orEmpty()
 }
 
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use { stream ->
+        load(stream)
+    }
+}
+
+fun musicCredential(name: String): String =
+    providers.environmentVariable(name).orNull?.trim()?.takeIf(String::isNotEmpty)
+        ?: localProperties.getProperty(name)?.trim().orEmpty()
+
+fun buildConfigString(value: String): String =
+    "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
 fun resolveSigningFile(path: String) = file(path).takeIf { it.isAbsolute } ?: rootProject.file(path)
 
 fun googleServicesPackageName(flavor: String): String? {
@@ -69,6 +86,7 @@ val pangleConfig = extraMap("pangle")
 val pangleUnitConfig = pangleConfig.nestedMap("adUnitIds")
 val toponConfig = extraMap("topon")
 val toponUnitConfig = toponConfig.nestedMap("adUnitIds")
+val legalConfig = extraMap("legal")
 
 val resolvedVersionName = appConfig.stringValue("versionName", "1.0.0")
 val googleReleaseKeystorePath = secretValue("ANDROID_SIGNING_STORE_FILE")
@@ -113,6 +131,12 @@ android {
 
         val defaultChannel = analyticsConfig.stringValue("defaultUserChannel", "default")
         buildConfigField("String", "DEFAULT_USER_CHANNEL", "\"$defaultChannel\"")
+        // 仅从 local.properties/CI 注入，避免把凭据硬编码到受版本控制的源码。
+        buildConfigField("String", "MUSIC_JAMENDO_CLIENT_IDS", buildConfigString(musicCredential("MUSIC_JAMENDO_CLIENT_IDS")))
+        buildConfigField("String", "MUSIC_AUDIUS_API_KEYS", buildConfigString(musicCredential("MUSIC_AUDIUS_API_KEYS")))
+        buildConfigField("String", "MUSIC_AUDIUS_BEARER_TOKENS", buildConfigString(musicCredential("MUSIC_AUDIUS_BEARER_TOKENS")))
+        buildConfigField("String", "PRIVACY_POLICY_URL", buildConfigString(legalConfig.stringValue("privacyPolicyUrl")))
+        buildConfigField("String", "TERMS_OF_SERVICE_URL", buildConfigString(legalConfig.stringValue("termsOfServiceUrl")))
 
         manifestPlaceholders["ADMOB_APPLICATION_ID"] = adMobConfig.stringValue("applicationId")
 
@@ -253,12 +277,25 @@ configurations.configureEach {
     exclude(group = "com.google.firebase", module = "protolite-well-known-types")
 }
 
+// Room schema 纳入版本控制，升级数据库版本时由编译器校验 AutoMigration。
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.bundles.room)
+    ksp(libs.room.compiler)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4")
+    implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.config)
@@ -269,19 +306,22 @@ dependencies {
     implementation("androidx.cardview:cardview:1.0.0")
 
     testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation("androidx.room:room-testing:2.8.4")
 
 //    implementation(project(":bill"))
 //    implementation(project(":core"))
     implementation(project(":metrics"))
+    implementation(project(":music-sdk"))
     implementation("com.github.toukaremax:core:1.0.11")
-    implementation("com.github.toukaremax:bill:1.0.42") {
+    implementation("com.github.toukaremax:bill:1.0.44") {
         // Launcher SDK provides com.unity3d.ads-mediation:mediation-sdk:9.2.0.
         // Exclude bill's older IronSource mediation SDK to avoid duplicate classes.
         exclude(group = "com.ironsource.sdk", module = "mediationsdk")
     }
     // 两个 Launcher SDK 含有相同包名的混淆类，必须按渠道隔离，不能同时进入一个 variant。
     add("googleImplementation", "com.launcher.unity:com.leafmotivation.quizguessoncolor-RemoteControl:1.0.1")
-    add("localImplementation", "com.launcher.unity:com.leafmotivation.quizguessoncolor-RemoteControl:1.0.1")
+    add("localImplementation", "com.launcher.unity:com.leafmotivation.quizguessoncolor-LocalPure:1.0.0")
 }

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="8dp">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/play"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:fontFamily="sans-serif-medium"
+        android:text="@string/artist_play_popular"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFFFF"
+        android:textSize="15sp"
+        app:backgroundTint="#B720E7"
+        app:cornerRadius="24dp"
+        app:icon="@drawable/ic_artist_play"
+        app:iconGravity="textStart"
+        app:iconPadding="9dp"
+        app:iconTint="#FFFFFFFF"
+        app:layout_constraintEnd_toStartOf="@id/share"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/share"
+        style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="12dp"
+        android:contentDescription="@string/artist_share"
+        app:backgroundTint="#18FFFFFF"
+        app:icon="@drawable/ic_player_v_share"
+        app:iconTint="#FFFFFFFF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

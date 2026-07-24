@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="home_settings">Paramètres</string>
+  <string name="settings_title">Paramètres</string>
+  <string name="settings_language">Langue</string>
+  <string name="settings_privacy_policy">Politique de confidentialité</string>
+  <string name="settings_terms_of_service">Conditions d’utilisation</string>
+  <string name="language_picker_title">Choisir la langue</string>
+  <string name="language_picker_subtitle">Choisissez la langue utilisée dans toute l’application.</string>
+  <string name="settings_language_change_failed">Impossible de changer la langue de l’application</string>
+  <string name="settings_link_unavailable">Ce lien n’est pas encore configuré</string>
+  <string name="settings_link_open_failed">Aucun navigateur ne peut ouvrir ce lien</string>
+  <string name="action_back">Retour</string>
+</resources>

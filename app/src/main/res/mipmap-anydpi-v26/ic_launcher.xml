@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
-    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+    <!-- 完整成品放在背景层，避免启动器视差缩放导致图形偏移或露出底色。 -->
+    <background android:drawable="@drawable/ic_launcher_square_adaptive" />
+    <foreground android:drawable="@android:color/transparent" />
 </adaptive-icon>

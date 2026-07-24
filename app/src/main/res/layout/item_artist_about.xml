@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_artist_card"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:text="@string/artist_about"
+        android:textColor="#FFFFFFFF"
+        android:textSize="17sp" />
+
+    <TextView
+        android:id="@+id/bio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="9dp"
+        android:ellipsize="end"
+        android:lineSpacingExtra="3dp"
+        android:textColor="#BFFFFFFF"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/tags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="11dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textColor="#DEBF5BFF"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:minWidth="56dp"
+        android:textColor="#FFE16AF5"
+        android:textSize="13sp" />
+</LinearLayout>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="HomeHeaderButton">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:background">@drawable/bg_home_header_button</item>
+        <item name="android:padding">6dp</item>
+        <item name="android:scaleType">centerInside</item>
+    </style>
+
+    <style name="HomeTrackAction">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:padding">6dp</item>
+        <item name="android:scaleType">centerInside</item>
+    </style>
+
+    <style name="HomeTrackTitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">#E6FFFEFE</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="HomeTrackArtist">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">#999999</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="HomeCoverTitle" parent="HomeTrackTitle">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="HomeCoverArtist" parent="HomeTrackArtist">
+        <item name="android:textSize">13sp</item>
+    </style>
+</resources>

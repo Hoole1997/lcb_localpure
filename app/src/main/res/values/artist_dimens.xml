@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 不含系统状态栏高度；运行时把 inset 加入头图，确保图片真正从屏幕顶端开始。 -->
+    <dimen name="artist_hero_height">340dp</dimen>
+    <dimen name="artist_toolbar_height">56dp</dimen>
+</resources>

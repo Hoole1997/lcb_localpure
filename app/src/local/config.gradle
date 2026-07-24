@@ -57,6 +57,10 @@ ext {
            versionCode  : 1,
            versionName  : "1.0.0"]
 
+    // 设置页法律链接集中配置，业务层不会硬编码站点地址。
+    legal = [privacyPolicyUrl : "https://metazymorphism.com/privacy.html",
+             termsOfServiceUrl: "https://metazymorphism.com/TermsOfUse.html"]
+
 
     // 统计归因配置
     analytics = [adjustAppToken: "hopjs50gmuww",           // Adjust App Token

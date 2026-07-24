@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="home_settings">Setelan</string>
+  <string name="settings_title">Setelan</string>
+  <string name="settings_language">Bahasa</string>
+  <string name="settings_privacy_policy">Kebijakan Privasi</string>
+  <string name="settings_terms_of_service">Ketentuan Layanan</string>
+  <string name="language_picker_title">Pilih bahasa</string>
+  <string name="language_picker_subtitle">Pilih bahasa yang digunakan di seluruh aplikasi.</string>
+  <string name="settings_language_change_failed">Bahasa aplikasi tidak dapat diubah</string>
+  <string name="settings_link_unavailable">Tautan ini belum dikonfigurasi</string>
+  <string name="settings_link_open_failed">Tidak ada browser untuk membuka tautan ini</string>
+  <string name="action_back">Kembali</string>
+</resources>

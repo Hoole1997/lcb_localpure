@@ -1,3 +1,183 @@
 <resources>
-    <string name="app_name">LCB_Template</string>
+    <string name="app_name" translatable="false">LocalPure</string>
+    <string name="home_brand" translatable="false">LocalPure</string>
+    <string name="home_search">Search</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_more">More options</string>
+    <string name="home_play">Play</string>
+    <string name="home_pause">Pause</string>
+    <string name="home_playing">Now playing</string>
+    <string name="home_queue">Play queue</string>
+    <string name="home_player_title" translatable="false">%1$s-%2$s</string>
+    <string name="home_local_playlists">Local Playlists</string>
+    <string name="home_section_recommended">Recommended Musics</string>
+    <string name="home_section_most_played">Most played</string>
+    <string name="home_section_my_playlist">My Playlist</string>
+    <string name="home_section_recently_played">Recently Played</string>
+    <string name="home_section_more">More ›</string>
+    <string name="home_play_all">Play all</string>
+    <string name="home_add_new_playlist">Add new playlist</string>
+    <string name="home_favorite_songs">My favorite songs</string>
+    <string name="search_hint">Search music</string>
+    <string name="search_clear">Clear search</string>
+    <string name="search_cancel">Cancel</string>
+    <string name="search_retry">Retry</string>
+    <string name="search_empty">No music found</string>
+    <string name="search_more_track">More: %1$s</string>
+    <string name="recommended_title">Recommended Musics</string>
+    <string name="recommended_play_all">Play all</string>
+    <string name="recommended_play_selected">Play selected (%1$d)</string>
+    <string name="recommended_multiple_choice">Select multiple songs</string>
+    <string name="recommended_finish_selection">Finish selecting songs</string>
+    <string name="recommended_select_track">Select song</string>
+    <string name="recommended_empty">No recommended music available</string>
+    <string name="track_action_song_info">Song Info</string>
+    <string name="track_action_artist_unavailable">Artist information is unavailable</string>
+    <string name="track_action_add_to_playlist">Add to playlist</string>
+    <string name="track_action_download">Download</string>
+    <string name="track_download_started">Downloading “%1$s”</string>
+    <string name="track_download_already_queued">“%1$s” is already downloaded or downloading</string>
+    <string name="track_download_unavailable">This track cannot be downloaded</string>
+    <string name="track_download_failed">Unable to start the download</string>
+    <string name="track_action_favorite">Favorite</string>
+    <string name="track_action_remove_favorite">Remove from favorites</string>
+    <string name="track_action_delete_from_device">Delete from device</string>
+    <string name="track_delete_title">Delete audio file?</string>
+    <string name="track_delete_message">“%1$s” will be permanently removed from this device.</string>
+    <string name="track_delete_confirm">Delete</string>
+    <string name="track_delete_success">Deleted “%1$s”</string>
+    <string name="track_delete_failed">Couldn’t delete this audio file</string>
+    <string name="track_delete_storage_permission_required">Storage permission is required to delete this file</string>
+    <string name="playlist_add_title">Add to playlist</string>
+    <string name="playlist_new">New</string>
+    <string name="playlist_empty_title">No playlists yet</string>
+    <string name="playlist_empty_message">Create a playlist to keep songs together.</string>
+    <string name="playlist_create_title">New playlist</string>
+    <string name="playlist_create_subtitle">Give your playlist a memorable name.</string>
+    <string name="playlist_name_hint">Playlist name</string>
+    <string name="playlist_name_required">Enter a playlist name</string>
+    <string name="playlist_cancel">Cancel</string>
+    <string name="playlist_create">Create</string>
+    <string name="playlist_create_failed">Could not create playlist</string>
+    <string name="playlist_track_added">Added to %1$s</string>
+    <string name="playlist_track_already_added">Already in %1$s</string>
+    <plurals name="playlist_song_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+    <string name="playlist_favorites_title">My favorite songs</string>
+    <string name="playlist_favorites_empty">No favorite songs yet</string>
+    <string name="playlist_tracks_empty">No songs in this playlist</string>
+    <string name="playlist_select">Select songs</string>
+    <string name="playlist_selected_count">%1$d selected</string>
+    <string name="playlist_remove_selected">Remove selected songs</string>
+    <string name="playlist_delete">Delete playlist</string>
+    <string name="playlist_delete_title">Delete this playlist?</string>
+    <string name="playlist_delete_message">“%1$s” and its playlist data will be deleted. Songs in other playlists will remain.</string>
+    <plurals name="playlist_removed_count">
+        <item quantity="one">Removed %1$d song</item>
+        <item quantity="other">Removed %1$d songs</item>
+    </plurals>
+    <string name="player_close">Close player</string>
+    <string name="player_share">Share track</string>
+    <string name="player_add_playlist">Add to playlist</string>
+    <string name="player_favorite">Favorite</string>
+    <string name="player_shuffle">Shuffle</string>
+    <string name="player_sequential">Sequential playback</string>
+    <string name="player_repeat_one">Repeat current track</string>
+    <string name="player_share_app">Download %1$s on Google Play:\n%2$s</string>
+    <string name="player_previous">Previous track</string>
+    <string name="player_next">Next track</string>
+    <string name="player_queue">Play queue</string>
+    <string name="player_queue_title">Up next</string>
+    <string name="player_queue_subtitle">%1$d songs</string>
+    <string name="player_currently_playing">Currently playing</string>
+    <string name="player_current_track">Current track, paused</string>
+    <string name="player_lyrics">Lyrics</string>
+    <string name="player_about_track">About this track</string>
+    <string name="player_artwork">Album artwork</string>
+    <string name="player_show_lyrics">Show lyrics</string>
+    <string name="player_show_description">Show track description</string>
+    <string name="player_show_artwork">Show album artwork</string>
+    <string name="player_seek">Playback position</string>
+    <string name="player_invalid_track">This track cannot be played</string>
+    <string name="artist_title">Artist</string>
+    <string name="artist_avatar">Artist portrait</string>
+    <string name="artist_verified">Verified artist</string>
+    <string name="artist_followers">Followers</string>
+    <string name="artist_tracks">Songs</string>
+    <string name="artist_releases">Releases</string>
+    <string name="artist_play_popular">Play popular</string>
+    <string name="artist_share">Share artist</string>
+    <string name="artist_about">About</string>
+    <string name="artist_more">More</string>
+    <string name="artist_less">Less</string>
+    <string name="artist_albums">Releases</string>
+    <string name="artist_playlists">Playlists</string>
+    <string name="artist_popular_songs">Popular songs</string>
+    <string name="artist_no_songs">No playable songs are available</string>
+    <string name="artist_load_failed">Unable to load this artist</string>
+    <string name="artist_share_text">Listen to %1$s:\n%2$s</string>
+    <string name="artist_more_track">More options for %1$s</string>
+    <string name="artist_details_load_failed">Unable to load artist information</string>
+    <string name="artist_songs_load_failed">Unable to load songs</string>
+    <string name="artist_releases_load_failed">Unable to load releases</string>
+    <string name="artist_playlists_load_failed">Unable to load playlists</string>
+    <string name="artist_more_songs_load_failed">Unable to load more songs</string>
+    <string name="artist_collection_no_songs">No playable songs in this collection</string>
+    <string name="artist_collection_open_failed">Unable to open this collection</string>
+    <string name="artist_tap_to_retry">%1$s · Tap to retry</string>
+    <string name="artist_collection_release">Release</string>
+    <string name="artist_collection_playlist">Playlist</string>
+    <plurals name="artist_track_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+    <string name="artist_meta_separator" translatable="false">•</string>
+    <string name="local_music_title">Local music</string>
+    <string name="local_music_device_title">On this device</string>
+    <string name="local_music_all_tracks">All music</string>
+    <string name="local_music_folder_chip" translatable="false">%1$s · %2$d</string>
+    <string name="local_music_library_summary" translatable="false">%1$s  ·  %2$s</string>
+    <plurals name="local_music_song_count">
+        <item quantity="one">%d song</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
+    <plurals name="local_music_folder_count">
+        <item quantity="one">%d folder</item>
+        <item quantity="other">%d folders</item>
+    </plurals>
+    <string name="local_music_permission_title">Access your music</string>
+    <string name="local_music_permission_message">Allow LocalPure to find and play audio files stored on this device.</string>
+    <string name="local_music_allow_access">Allow access</string>
+    <string name="local_music_open_settings">Open settings</string>
+    <string name="local_music_empty_title">No local music found</string>
+    <string name="local_music_empty_message">Add music files to this device, then scan again.</string>
+    <string name="local_music_scan_again">Scan again</string>
+    <string name="local_music_error_title">Unable to read local music</string>
+    <string name="local_music_unknown_title">Unknown track</string>
+    <string name="local_music_unknown_artist">Unknown artist</string>
+
+    <!-- Settings and per-app language -->
+    <string name="settings_title">Setting</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_terms_of_service">Terms of Service</string>
+    <string name="language_picker_title">Select language</string>
+    <string name="language_picker_subtitle">Choose the language used throughout the app.</string>
+    <string name="settings_language_change_failed">Unable to change the app language</string>
+    <string name="settings_link_unavailable">This link has not been configured yet</string>
+    <string name="settings_link_open_failed">No browser is available to open this link</string>
+    <string name="action_back">Back</string>
+    <!-- Native language names deliberately do not follow the current app locale. -->
+    <string name="settings_language_english" translatable="false">English</string>
+    <string name="settings_language_chinese_simplified" translatable="false">简体中文</string>
+    <string name="settings_language_japanese" translatable="false">日本語</string>
+    <string name="settings_language_korean" translatable="false">한국어</string>
+    <string name="settings_language_indonesian" translatable="false">Bahasa Indonesia</string>
+    <string name="settings_language_malay" translatable="false">Bahasa Melayu</string>
+    <string name="settings_language_german" translatable="false">Deutsch</string>
+    <string name="settings_language_french" translatable="false">Français</string>
+    <string name="settings_language_spanish" translatable="false">Español</string>
+    <string name="settings_language_vietnamese" translatable="false">Tiếng Việt</string>
 </resources>

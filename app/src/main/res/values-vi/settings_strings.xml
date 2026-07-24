@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="home_settings">Cài đặt</string>
+  <string name="settings_title">Cài đặt</string>
+  <string name="settings_language">Ngôn ngữ</string>
+  <string name="settings_privacy_policy">Chính sách bảo mật</string>
+  <string name="settings_terms_of_service">Điều khoản dịch vụ</string>
+  <string name="language_picker_title">Chọn ngôn ngữ</string>
+  <string name="language_picker_subtitle">Chọn ngôn ngữ được sử dụng trong toàn bộ ứng dụng.</string>
+  <string name="settings_language_change_failed">Không thể thay đổi ngôn ngữ ứng dụng</string>
+  <string name="settings_link_unavailable">Liên kết này chưa được cấu hình</string>
+  <string name="settings_link_open_failed">Không có trình duyệt để mở liên kết này</string>
+  <string name="action_back">Quay lại</string>
+</resources>

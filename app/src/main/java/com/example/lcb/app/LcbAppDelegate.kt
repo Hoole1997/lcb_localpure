@@ -3,6 +3,7 @@ package com.example.lcb.app
 import android.app.Application
 import com.blankj.utilcode.util.LogUtils
 import com.example.lcb.app.ad.LcbAdInitializer
+import com.example.lcb.app.utils.BusinessAdPolicy
 import net.corekit.metrics.adjust.AdjustTracker
 
 /**
@@ -28,6 +29,10 @@ internal class LcbAppDelegate(
 ) {
 
     fun onCreate(registerAttributionListener: (AttributionListener) -> Unit) {
+        // 先建立本地凭据兜底，Remote Config 完成后再线程安全地热更新，页面无需关心配置来源。
+        MusicDependencies.initialize()
+        MusicRemoteConfigSync.start()
+        BusinessAdPolicy.initializeSession()
         LcbAdInitializer.initialize(application)
         registerAttributionListener { isOrganic, network, campaign, adgroup, creative, jsonResponse ->
             AdjustTracker.init(

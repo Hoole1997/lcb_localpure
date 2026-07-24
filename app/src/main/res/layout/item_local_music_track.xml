@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="76dp"
+    android:background="@drawable/bg_search_result_ripple"
+    android:clickable="true"
+    android:focusable="true"
+    android:paddingStart="20dp"
+    android:paddingEnd="8dp">
+
+    <com.example.lcb.app.ui.TrackArtworkView
+        android:id="@+id/cover"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_local_music_artwork"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="13dp"
+        android:layout_marginEnd="8dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:textColor="#F5FFFFFF"
+        android:textSize="15sp"
+        app:layout_constraintBottom_toTopOf="@id/metadata"
+        app:layout_constraintEnd_toStartOf="@id/more"
+        app:layout_constraintStart_toEndOf="@id/cover"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="A long local song title that truncates gracefully" />
+
+    <TextView
+        android:id="@+id/metadata"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="13dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#9FFFFFFF"
+        android:textSize="13sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/duration"
+        app:layout_constraintStart_toEndOf="@id/cover"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        tools:text="Artist · Album" />
+
+    <TextView
+        android:id="@+id/duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="2dp"
+        android:fontFamily="sans-serif"
+        android:textColor="#70FFFFFF"
+        android:textSize="12sp"
+        app:layout_constraintBaseline_toBaselineOf="@id/metadata"
+        app:layout_constraintEnd_toStartOf="@id/more"
+        tools:text="3:42" />
+
+    <ImageButton
+        android:id="@+id/more"
+        android:layout_width="44dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_search_icon_ripple"
+        android:contentDescription="@string/home_more"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="17dp"
+        android:src="@drawable/ic_search_more"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

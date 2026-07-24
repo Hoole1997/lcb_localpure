@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 尺寸与真实推荐卡片一致，切换数据时不会引起页面跳动。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="306dp"
+    android:layout_height="280dp"
+    android:layout_marginEnd="12dp"
+    android:background="@drawable/bg_home_recommended_card"
+    android:orientation="vertical"
+    android:paddingHorizontal="12dp">
+
+    <include layout="@layout/view_home_skeleton_compact_row" />
+    <include layout="@layout/view_home_skeleton_compact_row" />
+    <include layout="@layout/view_home_skeleton_compact_row" />
+    <include layout="@layout/view_home_skeleton_compact_row" />
+</LinearLayout>

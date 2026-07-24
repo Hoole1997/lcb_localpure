@@ -44,8 +44,9 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "LCB_Template"
+rootProject.name = "LCB_OnlineMusic"
 include(":app")
 //include(":bill")
 //include(":core")
 include(":metrics")
+include(":music-sdk")

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="16dp">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="sans-serif-black"
+        android:text="@string/home_brand"
+        android:textColor="@android:color/white"
+        android:textSize="28sp"
+        android:textStyle="bold|italic" />
+
+    <ImageButton
+        android:id="@+id/search"
+        style="@style/HomeHeaderButton"
+        android:contentDescription="@string/home_search"
+        android:src="@drawable/ic_home_search" />
+
+    <ImageButton
+        android:id="@+id/settings"
+        style="@style/HomeHeaderButton"
+        android:layout_marginStart="12dp"
+        android:contentDescription="@string/home_settings"
+        android:src="@drawable/ic_home_settings" />
+</LinearLayout>

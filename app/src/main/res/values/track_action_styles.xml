@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 带少量紫调的中性色与播放器背景保持一致，避免纯黑白显得生硬。 -->
+    <color name="track_action_sheet">#FF18171C</color>
+    <color name="track_action_surface">#FF28262E</color>
+    <color name="track_action_handle">#FF605C67</color>
+    <color name="track_action_icon">#FFE8E2EB</color>
+    <color name="track_action_text_primary">#FFF4F0F6</color>
+    <color name="track_action_text_secondary">#FFA59EAA</color>
+    <!-- 收藏态使用明确的爱心红，避免与应用的紫色强调色混淆。 -->
+    <color name="track_action_favorite">#FFFF4D67</color>
+    <color name="track_action_danger">#FFF09A9A</color>
+
+    <style name="TrackAction.Row" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">@drawable/bg_track_action_ripple</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <style name="TrackAction.Icon" parent="">
+        <item name="android:layout_width">20dp</item>
+        <item name="android:layout_height">20dp</item>
+        <item name="android:contentDescription">@null</item>
+    </style>
+
+    <style name="TrackAction.Label" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">14dp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/track_action_text_primary</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+</resources>

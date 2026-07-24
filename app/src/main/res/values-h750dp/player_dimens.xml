@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 设计稿为 375×812，较高屏幕恢复完整的视觉留白。 -->
+    <dimen name="player_toolbar_margin_top">20dp</dimen>
+    <dimen name="player_artwork_margin_top">66dp</dimen>
+    <dimen name="player_artwork_max_size">328dp</dimen>
+    <dimen name="player_text_bottom_inset">64dp</dimen>
+    <dimen name="player_seek_control_gap">22dp</dimen>
+    <dimen name="player_control_bottom_margin">48dp</dimen>
+</resources>

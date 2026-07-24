@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="282dp"
+    android:layout_height="64dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <com.example.lcb.app.home.HomeTrackArtworkView
+        android:id="@+id/cover"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_home_cover" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="11dp" android:layout_weight="1" android:orientation="vertical">
+        <TextView android:id="@+id/title" style="@style/HomeTrackTitle" />
+        <TextView android:id="@+id/artist" style="@style/HomeTrackArtist" android:layout_marginTop="7dp" />
+    </LinearLayout>
+    <ImageButton android:id="@+id/more" style="@style/HomeTrackAction" android:contentDescription="@string/home_more" android:src="@drawable/ic_home_more" />
+</LinearLayout>

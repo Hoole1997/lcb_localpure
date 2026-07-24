@@ -1,19 +1,17 @@
 package com.example.lcb.app.ad.renderer
 
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import com.bumptech.glide.Glide
 import com.android.common.bill.ads.renderer.PangleNativeAdRenderer
 import com.android.common.bill.ui.pangle.PangleNativeAdStyle
 import com.bytedance.sdk.openadsdk.api.nativeAd.PAGNativeAdData
 import com.bytedance.sdk.openadsdk.api.nativeAd.PAGViewBinder
 import com.example.lcb.app.R
-import java.net.HttpURLConnection
-import java.net.URL
 
 class DefaultPangleNativeAdRenderer : PangleNativeAdRenderer {
 
@@ -50,14 +48,7 @@ class DefaultPangleNativeAdRenderer : PangleNativeAdRenderer {
     }
 
     private fun loadImageInto(url: String, imageView: ImageView) {
-        Thread {
-            runCatching {
-                val connection = URL(url).openConnection() as HttpURLConnection
-                connection.doInput = true
-                connection.connect()
-                val bitmap = connection.inputStream.use { BitmapFactory.decodeStream(it) }
-                imageView.post { imageView.setImageBitmap(bitmap) }
-            }
-        }.start()
+        // Glide 按 View 尺寸解码并随 View 生命周期取消，避免裸线程和广告原图导致 OOM。
+        Glide.with(imageView).load(url).override(96, 96).centerCrop().into(imageView)
     }
 }

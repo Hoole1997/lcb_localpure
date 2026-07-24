@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="home_settings">設定</string>
+  <string name="settings_title">設定</string>
+  <string name="settings_language">言語</string>
+  <string name="settings_privacy_policy">プライバシーポリシー</string>
+  <string name="settings_terms_of_service">利用規約</string>
+  <string name="language_picker_title">言語を選択</string>
+  <string name="language_picker_subtitle">アプリ全体で使用する言語を選択します。</string>
+  <string name="settings_language_change_failed">アプリの言語を変更できませんでした</string>
+  <string name="settings_link_unavailable">このリンクはまだ設定されていません</string>
+  <string name="settings_link_open_failed">このリンクを開けるブラウザがありません</string>
+  <string name="action_back">戻る</string>
+</resources>

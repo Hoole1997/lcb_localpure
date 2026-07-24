@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <!-- 顶部只保留保证白色系统图标可读的轻遮罩，中部展示原图，底部承接歌手信息。 -->
+    <gradient android:angle="270" android:startColor="#820C0714" android:centerColor="#120C0714" android:endColor="#F20C0714" />
+</shape>

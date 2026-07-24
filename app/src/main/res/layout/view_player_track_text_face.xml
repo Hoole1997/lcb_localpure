@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/trackTextFace"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="@dimen/player_text_bottom_inset">
+
+    <TextView
+        android:id="@+id/trackTextLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="28dp"
+        android:gravity="center"
+        android:text="@string/player_lyrics"
+        android:textAllCaps="true"
+        android:textColor="#F2FF78C8"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/trackTextScroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:fadeScrollbars="true"
+        android:fillViewport="true"
+        android:overScrollMode="never">
+
+        <TextView
+            android:id="@+id/trackTextContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:lineSpacingExtra="7dp"
+            android:textColor="#E0FFFFFF"
+            android:textSize="14sp" />
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>
