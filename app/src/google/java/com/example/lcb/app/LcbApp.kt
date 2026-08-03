@@ -23,13 +23,13 @@ class LcbApp : com.sonicpure.local.audio.tool.Gb1j0c8gtf8a89n70qeu() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun getLauncherActivityClass(): Class<in Any>? {
+    override fun deeprestorecorepanel(): Class<in Any>? {
         // dev 1.0.1: getLauncherActivityClass -> smartbackuptoolsignal
         return delegate.launcherActivityClass() as Class<in Any>?
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun getAppActivityClassArray(): List<Class<in Any>?>? {
+    override fun hyperrestoresafelocker(): List<Class<in Any>?>? {
         // dev 1.0.1: getAppActivityClassArray -> prodailysmartmemory
         return delegate.protectedActivityClasses() as List<Class<in Any>?>?
     }
