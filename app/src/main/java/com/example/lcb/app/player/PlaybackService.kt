@@ -11,6 +11,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.example.lcb.app.MusicLibraryDependencies
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.library.toLibraryTrack
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -33,7 +34,11 @@ class PlaybackService : MediaSessionService() {
     }
     private val recoveryListener = object : Player.Listener {
         override fun onPlayerError(error: PlaybackException) {
-            mediaSession?.player?.let(::skipFailedItem)
+            mediaSession?.player?.let { player ->
+                // Service 是失败恢复的唯一入口：必须先记录当前坏源，再切歌，避免页面监听被恢复流程吞掉。
+                reportPlaybackFailure(player, error)
+                skipFailedItem(player)
+            }
         }
 
         override fun onTimelineChanged(timeline: Timeline, reason: Int) {
@@ -94,6 +99,20 @@ class PlaybackService : MediaSessionService() {
                 Log.w(TAG, "Unable to record recent playback for $mediaId", error)
             }
         }
+    }
+
+    /**
+     * 播放可能发生在页面之外，因此错误事件不能依赖 PlayerActivity 的 MediaController 回调。
+     * 元数据解析失败时仍使用 unknown 平台和原始错误码完成兜底上报，不影响后续自动切歌。
+     */
+    private fun reportPlaybackFailure(player: Player, error: PlaybackException) {
+        val platform = runCatching {
+            player.currentMediaItem
+                ?.toPlayerTrack(durationMs = 0L)
+                ?.artistRef
+                ?.platform
+        }.getOrNull()
+        MusicAnalytics.playbackError(platform, error.errorCode)
     }
 
     /**

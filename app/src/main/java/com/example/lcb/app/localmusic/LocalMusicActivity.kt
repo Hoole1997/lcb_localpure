@@ -33,22 +33,26 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.databinding.ActivityLocalMusicBinding
 import com.example.lcb.app.player.MiniPlayerViewBinder
 import com.example.lcb.app.player.PlaybackQueueBottomSheet
 import com.example.lcb.app.player.PlaybackService
 import com.example.lcb.app.player.PlayerActivity
+import com.example.lcb.app.player.artworkCandidates
 import com.example.lcb.app.player.toPlayerTrack
 import com.example.lcb.app.player.toPlayerTrackQueue
 import com.example.lcb.app.trackactions.TrackActionUiModel
 import com.example.lcb.app.trackactions.TrackActionsController
 import com.example.lcb.app.utils.BottomNativeAdController
+import com.example.lcb.app.utils.BusinessAdSwitchKey
 import com.example.lcb.app.utils.InterstitialAdPlacement
 import com.example.lcb.app.utils.loadRequestedPostNavigationInterstitial
 import com.example.lcb.app.utils.requestPostNavigationInterstitial
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.coroutines.launch
+import net.corekit.core.controller.AdSlotSwitchController
 import kotlin.math.abs
 
 class LocalMusicActivity : AppCompatActivity() {
@@ -64,7 +68,9 @@ class LocalMusicActivity : AppCompatActivity() {
             binding.trackList.scrollToPosition(0)
         }
     }
-    private val trackActions by lazy(LazyThreadSafetyMode.NONE) { TrackActionsController(this) }
+    private val trackActions by lazy(LazyThreadSafetyMode.NONE) {
+        TrackActionsController(this, MusicAnalytics.Surface.LOCAL_MUSIC)
+    }
     private val miniPlayerBinder by lazy(LazyThreadSafetyMode.NONE) { MiniPlayerViewBinder(binding.miniPlayer) }
     private var permissionRequestAttempted = false
     private var controllerFuture: ListenableFuture<MediaController>? = null
@@ -77,6 +83,9 @@ class LocalMusicActivity : AppCompatActivity() {
     private var appBarOffsetListener: AppBarLayout.OnOffsetChangedListener? = null
     private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permissionRequestAttempted = true
+        MusicAnalytics.localMediaPermission(
+            if (granted) MusicAnalytics.Outcome.GRANTED else MusicAnalytics.Outcome.DENIED,
+        )
         viewModel.setPermissionGranted(granted)
     }
     private val playerListener = object : Player.Listener {
@@ -107,12 +116,14 @@ class LocalMusicActivity : AppCompatActivity() {
             miniPlayerHost = binding.miniPlayerHost,
         )
         observeState()
+        if (savedInstanceState == null) MusicAnalytics.screenView(MusicAnalytics.Screen.LOCAL_MUSIC)
         val granted = hasMediaPermission()
         viewModel.setPermissionGranted(granted)
         if (!granted && !permissionRequestAttempted) requestMediaPermission()
         loadRequestedPostNavigationInterstitial(
             savedInstanceState,
             condition = { hasMediaPermission() },
+            position = TAG
         )
     }
 
@@ -218,13 +229,21 @@ class LocalMusicActivity : AppCompatActivity() {
 
     private fun configureActions() {
         binding.playAll.setOnClickListener {
-            viewModel.state.value.tracks.firstOrNull()?.track?.let(::playTrack)
+            val first = viewModel.state.value.tracks.firstOrNull()?.track ?: return@setOnClickListener
+            val queue = viewModel.queueForTrack(first.id)
+            if (queue.isEmpty()) return@setOnClickListener
+            MusicAnalytics.playback(
+                MusicAnalytics.PlaybackAction.PLAY_ALL,
+                MusicAnalytics.Surface.LOCAL_MUSIC,
+                queueSize = queue.size,
+            )
+            PlayerActivity.openQueue(this, queue, first.id)
         }
         binding.stateAction.setOnClickListener {
             val state = viewModel.state.value
             when {
                 !state.hasPermission -> handlePermissionAction()
-                state.errorMessage != null -> viewModel.retry()
+                state.loadError != null -> viewModel.retry()
                 else -> viewModel.retry()
             }
         }
@@ -232,9 +251,26 @@ class LocalMusicActivity : AppCompatActivity() {
 
     private fun configureMiniPlayer() {
         miniPlayerBinder.setCallbacks(
-            onOpenPlayer = { PlayerActivity.openExisting(this) },
+            onOpenPlayer = {
+                MusicAnalytics.playback(
+                    MusicAnalytics.PlaybackAction.OPEN_PLAYER,
+                    MusicAnalytics.Surface.LOCAL_MINI_PLAYER,
+                )
+                PlayerActivity.openExisting(this)
+            },
             onPlayPause = {
-                controller?.let { player -> if (player.playWhenReady) player.pause() else player.play() }
+                controller?.let { player ->
+                    MusicAnalytics.playback(
+                        if (player.playWhenReady) {
+                            MusicAnalytics.PlaybackAction.PAUSE
+                        } else {
+                            MusicAnalytics.PlaybackAction.PLAY
+                        },
+                        MusicAnalytics.Surface.LOCAL_MINI_PLAYER,
+                        queueSize = player.mediaItemCount,
+                    )
+                    if (player.playWhenReady) player.pause() else player.play()
+                }
             },
             onQueue = ::showPlaybackQueue,
         )
@@ -262,8 +298,8 @@ class LocalMusicActivity : AppCompatActivity() {
             resources.getQuantityString(R.plurals.local_music_folder_count, state.folderCount, state.folderCount),
         )
         val showPermission = !state.hasPermission
-        val showError = state.hasPermission && state.errorMessage != null && !state.isLoading
-        val showEmpty = state.hasPermission && !state.isLoading && state.errorMessage == null && state.tracks.isEmpty()
+        val showError = state.hasPermission && state.loadError != null && !state.isLoading
+        val showEmpty = state.hasPermission && !state.isLoading && state.loadError == null && state.tracks.isEmpty()
         binding.stateContainer.isVisible = showPermission || showError || showEmpty
         when {
             showPermission -> {
@@ -276,7 +312,7 @@ class LocalMusicActivity : AppCompatActivity() {
             }
             showError -> {
                 binding.stateTitle.setText(R.string.local_music_error_title)
-                binding.stateMessage.text = state.errorMessage
+                binding.stateMessage.setText(requireNotNull(state.loadError).messageRes)
                 binding.stateAction.setText(R.string.search_retry)
                 binding.stateAction.isVisible = true
             }
@@ -288,7 +324,13 @@ class LocalMusicActivity : AppCompatActivity() {
             }
         }
         renderMiniPlayer(state.miniPlayer)
-        if (state.hasPermission && state.tracks.isNotEmpty()) bottomAdController.loadOnce()
+        if (
+            state.hasPermission &&
+            state.tracks.isNotEmpty() &&
+            AdSlotSwitchController.isEnabled(BusinessAdSwitchKey.LOCAL_MUSIC_BOTTOM_NATIVE)
+        ) {
+            bottomAdController.loadOnce(position = TAG)
+        }
     }
 
     private fun renderMiniPlayer(model: LocalMusicMiniPlayerUi?) {
@@ -303,7 +345,7 @@ class LocalMusicActivity : AppCompatActivity() {
             model = model?.let {
                 MiniPlayerViewBinder.Model(
                     track = it.track,
-                    artworkUrls = listOfNotNull(it.track.artworkUrl),
+                    artworkUrls = it.track.artworkCandidates(),
                     artworkFallbackRes = R.drawable.placeholder_local_music_track,
                     isPlaying = it.isPlaying,
                 )
@@ -315,7 +357,14 @@ class LocalMusicActivity : AppCompatActivity() {
 
     private fun playTrack(track: LocalMusicTrack) {
         val queue = viewModel.queueForTrack(track.id)
-        if (queue.isNotEmpty()) PlayerActivity.openQueue(this, queue, track.id)
+        if (queue.isNotEmpty()) {
+            MusicAnalytics.trackSelected(
+                MusicAnalytics.Surface.LOCAL_MUSIC,
+                platform = null,
+                queueSize = queue.size,
+            )
+            PlayerActivity.openQueue(this, queue, track.id)
+        }
     }
 
     private fun showTrackActions(track: LocalMusicTrack) {
@@ -373,6 +422,11 @@ class LocalMusicActivity : AppCompatActivity() {
         val player = controller ?: return
         val tracks = player.toPlayerTrackQueue()
         if (tracks.isEmpty()) return
+        MusicAnalytics.playback(
+            MusicAnalytics.PlaybackAction.QUEUE_OPEN,
+            MusicAnalytics.Surface.LOCAL_MINI_PLAYER,
+            queueSize = tracks.size,
+        )
         queueSheet?.dismiss()
         queueSheet = PlaybackQueueBottomSheet(
             context = this,
@@ -381,6 +435,11 @@ class LocalMusicActivity : AppCompatActivity() {
             isPlaying = player.isPlaying,
             onTrackSelected = { selected ->
                 tracks.indexOfFirst { it.id == selected.id }.takeIf { it >= 0 }?.let { index ->
+                    MusicAnalytics.playback(
+                        MusicAnalytics.PlaybackAction.QUEUE_SELECT,
+                        MusicAnalytics.Surface.LOCAL_MINI_PLAYER,
+                        queueSize = tracks.size,
+                    )
                     player.seekToDefaultPosition(index)
                     player.play()
                 }
@@ -391,6 +450,7 @@ class LocalMusicActivity : AppCompatActivity() {
 
     private fun handlePermissionAction() {
         if (mustOpenSettings()) {
+            MusicAnalytics.localMediaPermission(MusicAnalytics.Outcome.OPEN_SETTINGS)
             startActivity(
                 Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(
                     Uri.fromParts("package", packageName, null),
@@ -429,10 +489,14 @@ class LocalMusicActivity : AppCompatActivity() {
         private const val HEADER_INTERACTION_CUTOFF = 0.82f
         private const val TRACK_LIST_BOTTOM_PADDING_DP = 20
 
+        private const val TAG = "LocalMusicActivity"
+
         fun open(context: Context) {
             context.startActivity(
                 Intent(context, LocalMusicActivity::class.java)
-                    .requestPostNavigationInterstitial(InterstitialAdPlacement.CONTENT_PAGE),
+                    .requestPostNavigationInterstitial(
+                        InterstitialAdPlacement.HOME_LOCAL_PLAYLISTS_ENTRY,
+                    ),
             )
         }
     }

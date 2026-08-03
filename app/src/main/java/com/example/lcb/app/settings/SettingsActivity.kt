@@ -18,13 +18,16 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.databinding.ActivitySettingsBinding
+import com.example.lcb.app.utils.BusinessAdSwitchKey
 import com.example.lcb.app.utils.loadNative
 import kotlinx.coroutines.launch
+import net.corekit.core.controller.AdSlotSwitchController
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
-    private val repository by lazy(LazyThreadSafetyMode.NONE) { DefaultAppSettingsRepository(this) }
+    private val repository by lazy(LazyThreadSafetyMode.NONE) { DefaultAppSettingsRepository() }
     private val viewModel: SettingsViewModel by viewModels { SettingsViewModel.Factory(repository) }
     private val settingsAdapter by lazy(LazyThreadSafetyMode.NONE) { SettingsAdapter(::onSettingClick) }
 
@@ -39,8 +42,11 @@ class SettingsActivity : AppCompatActivity() {
         configureSettingsList()
         configureLanguageResult()
         observeState()
+        if (savedInstanceState == null) MusicAnalytics.screenView(MusicAnalytics.Screen.SETTINGS)
         // 设置操作不使用插屏；底部原生广告失败时容器自动隐藏。
-        loadNative(binding.adContainer)
+        if (AdSlotSwitchController.isEnabled(BusinessAdSwitchKey.SETTINGS_BOTTOM_NATIVE)) {
+            loadNative(binding.adContainer, position = TAG)
+        }
     }
 
     override fun onResume() {
@@ -94,7 +100,17 @@ class SettingsActivity : AppCompatActivity() {
         ) { _, result ->
             val tag = result.getString(LanguagePickerBottomSheet.RESULT_LANGUAGE_TAG)
                 ?: return@setFragmentResultListener
-            if (viewModel.applyLanguage(tag) == LanguageApplyResult.FAILED) {
+            val applyResult = viewModel.applyLanguage(tag)
+            MusicAnalytics.settings(
+                MusicAnalytics.SettingsAction.APPLY_LANGUAGE,
+                if (applyResult == LanguageApplyResult.FAILED) {
+                    MusicAnalytics.Outcome.FAILURE
+                } else {
+                    MusicAnalytics.Outcome.SUCCESS
+                },
+                value = tag,
+            )
+            if (applyResult == LanguageApplyResult.FAILED) {
                 Toast.makeText(this, R.string.settings_language_change_failed, Toast.LENGTH_SHORT).show()
             }
         }
@@ -133,9 +149,21 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun onSettingClick(action: SettingsAction) {
         when (action) {
-            SettingsAction.LANGUAGE -> showLanguagePicker()
-            SettingsAction.PRIVACY_POLICY -> openSecurePage(viewModel.state.value.privacyPolicyUrl)
-            SettingsAction.TERMS_OF_SERVICE -> openSecurePage(viewModel.state.value.termsOfServiceUrl)
+            SettingsAction.LANGUAGE -> {
+                MusicAnalytics.settings(
+                    action = MusicAnalytics.SettingsAction.OPEN_LANGUAGE,
+                    value = viewModel.state.value.currentLanguage.analyticsValue,
+                )
+                showLanguagePicker()
+            }
+            SettingsAction.PRIVACY_POLICY -> openSecurePage(
+                viewModel.state.value.privacyPolicyUrl,
+                MusicAnalytics.SettingsAction.OPEN_PRIVACY_POLICY,
+            )
+            SettingsAction.TERMS_OF_SERVICE -> openSecurePage(
+                viewModel.state.value.termsOfServiceUrl,
+                MusicAnalytics.SettingsAction.OPEN_TERMS_OF_SERVICE,
+            )
         }
     }
 
@@ -146,8 +174,9 @@ class SettingsActivity : AppCompatActivity() {
             .show(supportFragmentManager, LanguagePickerBottomSheet.TAG)
     }
 
-    private fun openSecurePage(url: String?) {
+    private fun openSecurePage(url: String?, analyticsAction: MusicAnalytics.SettingsAction) {
         if (url == null) {
+            MusicAnalytics.settings(analyticsAction, MusicAnalytics.Outcome.FAILURE)
             Toast.makeText(this, R.string.settings_link_unavailable, Toast.LENGTH_SHORT).show()
             return
         }
@@ -156,14 +185,18 @@ class SettingsActivity : AppCompatActivity() {
         }
         try {
             startActivity(intent)
+            MusicAnalytics.settings(analyticsAction, MusicAnalytics.Outcome.SUCCESS)
         } catch (_: ActivityNotFoundException) {
+            MusicAnalytics.settings(analyticsAction, MusicAnalytics.Outcome.FAILURE)
             Toast.makeText(this, R.string.settings_link_open_failed, Toast.LENGTH_SHORT).show()
         } catch (_: SecurityException) {
+            MusicAnalytics.settings(analyticsAction, MusicAnalytics.Outcome.FAILURE)
             Toast.makeText(this, R.string.settings_link_open_failed, Toast.LENGTH_SHORT).show()
         }
     }
 
     companion object {
+        private const val TAG = "SettingsActivity"
         fun open(context: Context) {
             context.startActivity(Intent(context, SettingsActivity::class.java))
         }

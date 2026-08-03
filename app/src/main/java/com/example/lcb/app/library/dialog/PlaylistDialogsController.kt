@@ -7,6 +7,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.example.lcb.app.MusicLibraryDependencies
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.library.AddTrackResult
 import com.example.lcb.app.library.LibraryTrack
 import com.example.lcb.app.library.MusicLibraryRepository
@@ -79,10 +80,18 @@ class PlaylistDialogsController(
             operationJob = null
             result
                 .onSuccess { playlistId ->
+                    MusicAnalytics.playlist(
+                        MusicAnalytics.PlaylistAction.CREATE,
+                        MusicAnalytics.Outcome.SUCCESS,
+                    )
                     dismissCreator()
                     onCreated(playlistId, name.trim())
                 }
                 .onFailure { error ->
+                    MusicAnalytics.playlist(
+                        MusicAnalytics.PlaylistAction.CREATE,
+                        MusicAnalytics.Outcome.FAILURE,
+                    )
                     creator?.showError(error.message ?: activity.getString(R.string.playlist_create_failed))
                 }
         }
@@ -94,6 +103,15 @@ class PlaylistDialogsController(
         operationJob = activity.lifecycleScope.launch {
             val result = repository.addTrackToPlaylist(playlistId, track)
             operationJob = null
+            MusicAnalytics.playlist(
+                MusicAnalytics.PlaylistAction.ADD_TRACK,
+                if (result == AddTrackResult.ADDED) {
+                    MusicAnalytics.Outcome.SUCCESS
+                } else {
+                    MusicAnalytics.Outcome.ALREADY_EXISTS
+                },
+                trackCount = 1,
+            )
             Toast.makeText(
                 activity,
                 if (result == AddTrackResult.ADDED) {

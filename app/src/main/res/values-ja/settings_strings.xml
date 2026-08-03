@@ -11,4 +11,5 @@
   <string name="settings_link_unavailable">このリンクはまだ設定されていません</string>
   <string name="settings_link_open_failed">このリンクを開けるブラウザがありません</string>
   <string name="action_back">戻る</string>
+  <string name="settings_language_system_default">システム設定に従う</string>
 </resources>

@@ -12,6 +12,12 @@
   <string name="search_cancel">취소</string>
   <string name="search_retry">다시 시도</string>
   <string name="search_empty">음악을 찾을 수 없습니다</string>
+  <string name="load_error_home">음악을 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.</string>
+  <string name="load_error_recommended">추천 음악을 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.</string>
+  <string name="load_error_recommended_more">추천 음악을 더 불러올 수 없습니다. 탭하여 다시 시도하세요.</string>
+  <string name="load_error_search">음악을 검색할 수 없습니다. 연결을 확인하고 다시 시도하세요.</string>
+  <string name="load_error_search_more">검색 결과를 더 불러올 수 없습니다. 탭하여 다시 시도하세요.</string>
+  <string name="load_error_local_music">로컬 음악을 읽을 수 없습니다. 다시 시도하세요.</string>
   <string name="search_more_track">더보기: %1$s</string>
   <string name="recommended_title">추천 음악</string>
   <string name="recommended_play_all">모두 재생</string>
@@ -20,7 +26,7 @@
   <string name="recommended_finish_selection">선택 완료</string>
   <string name="recommended_select_track">곡 선택</string>
   <string name="recommended_empty">추천 음악이 없습니다</string>
-  <string name="track_action_song_info">곡 정보</string>
+  <string name="track_action_song_info">아티스트 정보</string>
   <string name="track_action_artist_unavailable">아티스트 정보를 사용할 수 없습니다</string>
   <string name="track_action_add_to_playlist">재생목록에 추가</string>
   <string name="track_action_download">다운로드</string>

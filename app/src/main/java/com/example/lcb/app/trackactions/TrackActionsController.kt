@@ -8,9 +8,11 @@ import androidx.lifecycle.lifecycleScope
 import com.example.lcb.app.MusicLibraryDependencies
 import com.example.lcb.app.MusicDependencies
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.artist.ArtistActivity
 import com.example.lcb.app.library.MusicLibraryRepository
 import com.example.lcb.app.library.dialog.PlaylistDialogsController
+import com.example.lcb.app.utils.InterstitialAdPlacement
 import android.widget.Toast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -21,8 +23,9 @@ import kotlinx.coroutines.withContext
 /**
  * 多页面复用入口。Controller 随宿主生命周期关闭弹框，避免 Dialog 持有已销毁 Activity。
  */
-class TrackActionsController(
+internal class TrackActionsController(
     private val activity: AppCompatActivity,
+    private val surface: MusicAnalytics.Surface,
     private val repository: MusicLibraryRepository = MusicLibraryDependencies.repository(activity),
     private val artistResolver: TrackArtistResolver = MusicSdkTrackArtistResolver(MusicDependencies.sdk),
 ) : DefaultLifecycleObserver {
@@ -85,15 +88,28 @@ class TrackActionsController(
     private fun handleAction(event: TrackActionEvent) {
         when (event.type) {
             TrackActionType.SONG_INFO -> openArtist(event.track)
-            TrackActionType.ADD_TO_PLAYLIST -> playlistDialogs.showPlaylistPicker(event.track.toLibraryTrack())
+            TrackActionType.ADD_TO_PLAYLIST -> {
+                MusicAnalytics.trackAction(
+                    MusicAnalytics.TrackAction.ADD_TO_PLAYLIST,
+                    surface,
+                    event.track.artistRef?.platform,
+                )
+                playlistDialogs.showPlaylistPicker(event.track.toLibraryTrack())
+            }
             TrackActionType.DOWNLOAD -> enqueueDownload(event.track)
             TrackActionType.FAVORITE_CHANGED -> {
                 favoriteJob?.cancel()
                 favoriteJob = activity.lifecycleScope.launch {
-                    repository.setFavorite(event.track.toLibraryTrack(), event.isFavorite)
+                    runCatching {
+                        repository.setFavorite(event.track.toLibraryTrack(), event.isFavorite)
+                    }.onSuccess {
+                        reportFavorite(event.track, event.isFavorite, MusicAnalytics.Outcome.SUCCESS)
+                    }.onFailure {
+                        reportFavorite(event.track, event.isFavorite, MusicAnalytics.Outcome.FAILURE)
+                    }
                 }
             }
-            TrackActionType.DELETE_FROM_DEVICE -> DeviceTrackDeletionActivity.open(activity, event.track)
+            TrackActionType.DELETE_FROM_DEVICE -> DeviceTrackDeletionActivity.open(activity, event.track, surface)
         }
     }
 
@@ -101,6 +117,18 @@ class TrackActionsController(
     private fun enqueueDownload(track: TrackActionUiModel) {
         activity.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { trackDownloader.enqueue(track) }
+            MusicAnalytics.trackAction(
+                MusicAnalytics.TrackAction.DOWNLOAD,
+                surface,
+                track.artistRef?.platform,
+                when (result) {
+                    TrackDownloadResult.Enqueued -> MusicAnalytics.Outcome.SUCCESS
+                    TrackDownloadResult.AlreadyQueued -> MusicAnalytics.Outcome.ALREADY_EXISTS
+                    TrackDownloadResult.Unavailable,
+                    TrackDownloadResult.Failed,
+                    -> MusicAnalytics.Outcome.FAILURE
+                },
+            )
             if (
                 activity.isFinishing || activity.isDestroyed ||
                 !activity.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
@@ -134,10 +162,39 @@ class TrackActionsController(
                 return@launch
             }
             if (artist != null) {
-                ArtistActivity.open(activity, artist)
+                MusicAnalytics.trackAction(
+                    MusicAnalytics.TrackAction.OPEN_ARTIST,
+                    surface,
+                    artist.platform,
+                    MusicAnalytics.Outcome.SUCCESS,
+                )
+                ArtistActivity.open(
+                    activity,
+                    artist,
+                    InterstitialAdPlacement.SONG_INFO_ARTIST_ENTRY,
+                )
             } else {
+                MusicAnalytics.trackAction(
+                    MusicAnalytics.TrackAction.OPEN_ARTIST,
+                    surface,
+                    track.artistRef?.platform,
+                    MusicAnalytics.Outcome.FAILURE,
+                )
                 Toast.makeText(activity, R.string.track_action_artist_unavailable, Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun reportFavorite(
+        track: TrackActionUiModel,
+        favorite: Boolean,
+        outcome: MusicAnalytics.Outcome,
+    ) {
+        MusicAnalytics.trackAction(
+            if (favorite) MusicAnalytics.TrackAction.FAVORITE_ADD else MusicAnalytics.TrackAction.FAVORITE_REMOVE,
+            surface,
+            track.artistRef?.platform,
+            outcome,
+        )
     }
 }

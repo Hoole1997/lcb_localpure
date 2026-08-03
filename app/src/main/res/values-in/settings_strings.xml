@@ -11,4 +11,5 @@
   <string name="settings_link_unavailable">Tautan ini belum dikonfigurasi</string>
   <string name="settings_link_open_failed">Tidak ada browser untuk membuka tautan ini</string>
   <string name="action_back">Kembali</string>
+  <string name="settings_language_system_default">Ikuti bahasa sistem</string>
 </resources>

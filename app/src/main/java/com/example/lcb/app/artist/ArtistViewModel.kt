@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.lcb.app.R
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.player.artworkCandidates
 import com.example.lcb.music.model.MusicPlatform
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -186,7 +187,7 @@ class ArtistViewModel(
             val listed = projectedTracks.firstOrNull { it.id == current.track.id }
             ArtistMiniPlayerUi(
                 track = current.track,
-                artworkUrls = listed?.artworkUrls ?: listOfNotNull(current.track.artworkUrl),
+                artworkUrls = listed?.artworkUrls ?: current.track.artworkCandidates(),
                 artworkFallbackRes = listed?.artworkFallbackRes
                     ?: R.drawable.home_cover_recommended_3,
                 isPlaying = current.playWhenReady,

@@ -1,6 +1,7 @@
 package com.example.lcb.app.localmusic
 
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.ui.AppLoadError
 
 /** MediaStore 元数据模型；音频内容始终通过 content URI 流式读取，不进入应用内存。 */
 data class LocalMusicTrack(
@@ -22,6 +23,7 @@ data class LocalMusicTrack(
         artworkUrl = artworkUrl,
         streamUrl = contentUri,
         durationMs = durationMs,
+        artworkThumbnailUrls = listOfNotNull(artworkUrl),
     )
 }
 
@@ -52,7 +54,7 @@ data class LocalMusicUiState(
     val folders: List<LocalMusicFolderUi> = emptyList(),
     val totalTrackCount: Int = 0,
     val folderCount: Int = 0,
-    val errorMessage: String? = null,
+    val loadError: AppLoadError? = null,
     val miniPlayer: LocalMusicMiniPlayerUi? = null,
 )
 

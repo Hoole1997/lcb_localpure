@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lcb.app.MusicDependencies
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.databinding.ActivityArtistBinding
 import com.example.lcb.app.player.MiniPlayerViewBinder
 import com.example.lcb.app.player.PlaybackQueueBottomSheet
@@ -40,6 +41,7 @@ import com.example.lcb.app.trackactions.TrackActionUiModel
 import com.example.lcb.app.trackactions.TrackActionsController
 import com.example.lcb.app.ui.TrackArtworkLoader
 import com.example.lcb.app.utils.BottomNativeAdController
+import com.example.lcb.app.utils.BusinessAdSwitchKey
 import com.example.lcb.app.utils.InterstitialAdPlacement
 import com.example.lcb.app.utils.loadRequestedPostNavigationInterstitial
 import com.example.lcb.app.utils.requestPostNavigationInterstitial
@@ -49,6 +51,7 @@ import com.example.lcb.music.model.MusicImage
 import com.example.lcb.music.model.MusicPlatform
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.launch
+import net.corekit.core.controller.AdSlotSwitchController
 import java.text.NumberFormat
 import kotlin.math.abs
 
@@ -77,7 +80,9 @@ class ArtistActivity : AppCompatActivity() {
             onRetry = viewModel::retry,
         )
     }
-    private val trackActions by lazy(LazyThreadSafetyMode.NONE) { TrackActionsController(this) }
+    private val trackActions by lazy(LazyThreadSafetyMode.NONE) {
+        TrackActionsController(this, MusicAnalytics.Surface.ARTIST)
+    }
     private val miniPlayerBinder by lazy(LazyThreadSafetyMode.NONE) { MiniPlayerViewBinder(binding.miniPlayer) }
 
     private var controllerFuture: ListenableFuture<MediaController>? = null
@@ -136,7 +141,8 @@ class ArtistActivity : AppCompatActivity() {
             miniPlayerHost = binding.miniPlayerHost,
         )
         observeState()
-        loadRequestedPostNavigationInterstitial(savedInstanceState)
+        if (savedInstanceState == null) MusicAnalytics.screenView(MusicAnalytics.Screen.ARTIST)
+        loadRequestedPostNavigationInterstitial(savedInstanceState, position = TAG)
     }
 
     override fun onStart() {
@@ -234,9 +240,28 @@ class ArtistActivity : AppCompatActivity() {
 
     private fun configureMiniPlayer() {
         miniPlayerBinder.setCallbacks(
-            onOpenPlayer = { PlayerActivity.openExisting(this) },
+            onOpenPlayer = {
+                MusicAnalytics.playback(
+                    MusicAnalytics.PlaybackAction.OPEN_PLAYER,
+                    MusicAnalytics.Surface.ARTIST_MINI_PLAYER,
+                    viewModel.state.value.miniPlayer?.track?.artistRef?.platform,
+                )
+                PlayerActivity.openExisting(this)
+            },
             onPlayPause = {
-                controller?.let { player -> if (player.playWhenReady) player.pause() else player.play() }
+                controller?.let { player ->
+                    MusicAnalytics.playback(
+                        if (player.playWhenReady) {
+                            MusicAnalytics.PlaybackAction.PAUSE
+                        } else {
+                            MusicAnalytics.PlaybackAction.PLAY
+                        },
+                        MusicAnalytics.Surface.ARTIST_MINI_PLAYER,
+                        viewModel.state.value.miniPlayer?.track?.artistRef?.platform,
+                        player.mediaItemCount,
+                    )
+                    if (player.playWhenReady) player.pause() else player.play()
+                }
             },
             onQueue = ::showPlaybackQueue,
         )
@@ -250,11 +275,18 @@ class ArtistActivity : AppCompatActivity() {
                 launch {
                     viewModel.events.collect { event ->
                         when (event) {
-                            is ArtistEvent.OpenQueue -> PlayerActivity.openQueue(
-                                this@ArtistActivity,
-                                event.queue,
-                                event.currentTrackId,
-                            )
+                            is ArtistEvent.OpenQueue -> {
+                                MusicAnalytics.trackSelected(
+                                    MusicAnalytics.Surface.ARTIST,
+                                    artistRequest.platform,
+                                    event.queue.size,
+                                )
+                                PlayerActivity.openQueue(
+                                    this@ArtistActivity,
+                                    event.queue,
+                                    event.currentTrackId,
+                                )
+                            }
                             is ArtistEvent.Message -> Toast.makeText(
                                 this@ArtistActivity,
                                 event.messageRes,
@@ -292,8 +324,12 @@ class ArtistActivity : AppCompatActivity() {
             controllerReady = controller != null,
             hasQueue = controller?.mediaItemCount?.let { it > 0 } == true,
         )
-        if (!state.isInitialLoading && (state.details != null || state.tracks.isNotEmpty())) {
-            bottomAdController.loadOnce()
+        if (
+            !state.isInitialLoading &&
+            (state.details != null || state.tracks.isNotEmpty()) &&
+            AdSlotSwitchController.isEnabled(BusinessAdSwitchKey.ARTIST_DETAIL_BOTTOM_NATIVE)
+        ) {
+            bottomAdController.loadOnce(position = TAG)
         }
     }
 
@@ -329,6 +365,11 @@ class ArtistActivity : AppCompatActivity() {
     private fun playTrack(item: ArtistTrackUi) {
         val queue = viewModel.queue()
         if (queue.isEmpty()) return
+        MusicAnalytics.trackSelected(
+            MusicAnalytics.Surface.ARTIST,
+            item.track.artistRef?.platform ?: artistRequest.platform,
+            queue.size,
+        )
         viewModel.updatePlayback(item.track, playWhenReady = true, isActivelyPlaying = true)
         PlayerActivity.openQueue(this, queue, item.id)
     }
@@ -336,6 +377,12 @@ class ArtistActivity : AppCompatActivity() {
     private fun playAll() {
         val queue = viewModel.queue()
         val first = queue.firstOrNull() ?: return
+        MusicAnalytics.playback(
+            MusicAnalytics.PlaybackAction.PLAY_ALL,
+            MusicAnalytics.Surface.ARTIST,
+            first.artistRef?.platform ?: artistRequest.platform,
+            queue.size,
+        )
         viewModel.updatePlayback(first, playWhenReady = true, isActivelyPlaying = true)
         PlayerActivity.openQueue(this, queue, first.id)
     }
@@ -359,6 +406,11 @@ class ArtistActivity : AppCompatActivity() {
     }
 
     private fun shareArtist() {
+        MusicAnalytics.trackAction(
+            MusicAnalytics.TrackAction.SHARE_ARTIST,
+            MusicAnalytics.Surface.ARTIST,
+            artistRequest.platform,
+        )
         val details = viewModel.state.value.details
         val name = details?.artist?.name ?: artistRequest.fallbackName
         val target = details?.artist?.permalink
@@ -417,6 +469,11 @@ class ArtistActivity : AppCompatActivity() {
         val player = controller ?: return
         val tracks = player.toPlayerTrackQueue()
         if (tracks.isEmpty()) return
+        MusicAnalytics.playback(
+            MusicAnalytics.PlaybackAction.QUEUE_OPEN,
+            MusicAnalytics.Surface.ARTIST_MINI_PLAYER,
+            queueSize = tracks.size,
+        )
         queueSheet?.dismiss()
         queueSheet = PlaybackQueueBottomSheet(
             context = this,
@@ -425,6 +482,12 @@ class ArtistActivity : AppCompatActivity() {
             isPlaying = player.isPlaying,
             onTrackSelected = { selected ->
                 tracks.indexOfFirst { it.id == selected.id }.takeIf { it >= 0 }?.let { index ->
+                    MusicAnalytics.playback(
+                        MusicAnalytics.PlaybackAction.QUEUE_SELECT,
+                        MusicAnalytics.Surface.ARTIST_MINI_PLAYER,
+                        selected.artistRef?.platform,
+                        tracks.size,
+                    )
                     player.seekToDefaultPosition(index)
                     player.play()
                 }
@@ -457,18 +520,30 @@ class ArtistActivity : AppCompatActivity() {
         private const val COLLECTION_VIEW_TYPE = 0
         private const val COLLECTION_POOL_SIZE = 12
 
-        fun open(context: Context, artist: MusicArtistRef) {
-            open(context, artist.platform, artist.id, artist.name)
+        private const val TAG = "ArtistActivity"
+
+        fun open(
+            context: Context,
+            artist: MusicArtistRef,
+            interstitialPlacement: InterstitialAdPlacement,
+        ) {
+            open(context, artist.platform, artist.id, artist.name, interstitialPlacement)
         }
 
-        fun open(context: Context, platform: MusicPlatform, artistId: String, artistName: String) {
+        fun open(
+            context: Context,
+            platform: MusicPlatform,
+            artistId: String,
+            artistName: String,
+            interstitialPlacement: InterstitialAdPlacement,
+        ) {
             if (artistId.isBlank()) return
             context.startActivity(
                 Intent(context, ArtistActivity::class.java).apply {
                     putExtra(EXTRA_PLATFORM, platform.name)
                     putExtra(EXTRA_ARTIST_ID, artistId)
                     putExtra(EXTRA_ARTIST_NAME, artistName)
-                }.requestPostNavigationInterstitial(InterstitialAdPlacement.CONTENT_PAGE),
+                }.requestPostNavigationInterstitial(interstitialPlacement),
             )
         }
 

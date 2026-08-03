@@ -1,7 +1,9 @@
 package com.example.lcb.music.internal
 
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -56,5 +58,45 @@ class KeyPoolTest {
         pool.replace(listOf("new-key"))
 
         assertEquals(listOf("new-key"), pool.candidates())
+    }
+
+    @Test
+    fun `network failure keeps credentials healthy for immediate retry`() = runBlocking {
+        val pool = KeyPool(listOf("a", "b"), defaultCooldownMs = 120_000)
+        val attempts = mutableListOf<String>()
+        val networkFailure = ProviderRequestException(
+            statusCode = null,
+            message = "Network request failed",
+        )
+
+        val result = runCatching {
+            withKeyFailover<String, Unit>(pool) { credential ->
+                attempts += credential
+                throw networkFailure
+            }
+        }
+
+        assertSame(networkFailure, result.exceptionOrNull())
+        assertEquals(listOf("a"), attempts)
+        assertEquals(Triple(2, 0, 0), pool.snapshot())
+        assertEquals(setOf("a", "b"), pool.candidates().toSet())
+    }
+
+    @Test
+    fun `rate limit rotates to the next credential`() = runBlocking {
+        val pool = KeyPool(listOf("a", "b"), defaultCooldownMs = 120_000)
+        val attempts = mutableListOf<String>()
+
+        val selected = withKeyFailover(pool) { credential ->
+            attempts += credential
+            if (credential == "a") {
+                throw ProviderRequestException(statusCode = 429, message = "Rate limited")
+            }
+            credential
+        }
+
+        assertEquals("b", selected)
+        assertEquals(listOf("a", "b"), attempts)
+        assertEquals(Triple(1, 1, 0), pool.snapshot())
     }
 }

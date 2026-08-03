@@ -57,9 +57,33 @@
     <ImageButton android:id="@+id/addToPlaylist" style="@style/PlayerSmallButton" android:contentDescription="@string/player_add_playlist" android:src="@drawable/ic_player_v_add" app:layout_constraintBottom_toTopOf="@id/seekBar" app:layout_constraintStart_toStartOf="parent" />
     <ImageButton android:id="@+id/favorite" style="@style/PlayerSmallButton" android:contentDescription="@string/player_favorite" android:src="@drawable/ic_player_v_favorite" app:layout_constraintBottom_toTopOf="@id/seekBar" app:layout_constraintEnd_toEndOf="parent" />
 
-    <TextView android:id="@+id/currentTime" style="@style/PlayerTime" android:text="00:00" app:layout_constraintBottom_toBottomOf="@id/seekBar" app:layout_constraintStart_toStartOf="parent" />
-    <com.example.lcb.app.player.GradientSeekBar android:id="@+id/seekBar" android:layout_width="0dp" android:layout_height="32dp" android:layout_marginBottom="@dimen/player_seek_control_gap" android:contentDescription="@string/player_seek" app:layout_constraintBottom_toTopOf="@id/play" app:layout_constraintEnd_toStartOf="@id/duration" app:layout_constraintStart_toEndOf="@id/currentTime" />
-    <TextView android:id="@+id/duration" style="@style/PlayerTime" android:gravity="end" android:text="00:00" app:layout_constraintBottom_toBottomOf="@id/seekBar" app:layout_constraintEnd_toEndOf="parent" />
+    <!-- 时间与进度条共享上下约束，在字体缩放下仍保持同一条视觉中轴。 -->
+    <TextView
+        android:id="@+id/currentTime"
+        style="@style/PlayerTime"
+        android:text="00:00"
+        app:layout_constraintBottom_toBottomOf="@id/seekBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/seekBar" />
+
+    <com.example.lcb.app.player.GradientSeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:layout_marginBottom="@dimen/player_seek_control_gap"
+        android:contentDescription="@string/player_seek"
+        app:layout_constraintBottom_toTopOf="@id/play"
+        app:layout_constraintEnd_toStartOf="@id/duration"
+        app:layout_constraintStart_toEndOf="@id/currentTime" />
+
+    <TextView
+        android:id="@+id/duration"
+        style="@style/PlayerTime"
+        android:gravity="center_vertical|end"
+        android:text="00:00"
+        app:layout_constraintBottom_toBottomOf="@id/seekBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/seekBar" />
 
     <ImageButton android:id="@+id/shuffle" style="@style/PlayerControlButton" android:contentDescription="@string/player_shuffle" android:src="@drawable/ic_player_v_shuffle" app:layout_constraintBottom_toBottomOf="@id/play" app:layout_constraintEnd_toStartOf="@id/previous" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="@id/play" />
     <ImageButton android:id="@+id/previous" style="@style/PlayerControlButton" android:contentDescription="@string/player_previous" android:src="@drawable/ic_player_v_previous" app:layout_constraintBottom_toBottomOf="@id/play" app:layout_constraintEnd_toStartOf="@id/play" app:layout_constraintStart_toEndOf="@id/shuffle" app:layout_constraintTop_toTopOf="@id/play" />

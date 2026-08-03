@@ -43,11 +43,8 @@ internal object BusinessAdPolicy {
     fun initializeSession() = Unit
 
     fun tryAcquireInterstitial(placement: InterstitialAdPlacement): Boolean {
-        // placement 保留为明确的业务输入，后续可按播放/内容页分别配置远端策略。
-        return when (placement) {
-            InterstitialAdPlacement.CONTENT_PAGE,
-            InterstitialAdPlacement.PLAYBACK_START,
-            -> interstitialGate.tryAcquire()
-        }
+        // 读取 switchKey 保留明确的业务输入；所有已开启广告位仍共享统一频控。
+        check(placement.switchKey.isNotBlank())
+        return interstitialGate.tryAcquire()
     }
 }

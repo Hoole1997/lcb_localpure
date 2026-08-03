@@ -1,6 +1,7 @@
 package com.example.lcb.app.recommended
 
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.ui.AppLoadError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -82,6 +83,37 @@ class RecommendedMusicViewModelTest {
 
             assertEquals(listOf("2"), viewModel.playAllQueue().map(PlayerTrack::id))
             assertEquals(1, viewModel.state.value.selectedCount)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `retry reloads first page after the initial request fails`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        try {
+            var attempts = 0
+            val viewModel = RecommendedMusicViewModel(
+                object : RecommendedMusicRepository {
+                    override suspend fun load(offset: Int, limit: Int): RecommendedMusicPage {
+                        attempts += 1
+                        if (attempts == 1) error("Network request failed")
+                        return RecommendedMusicPage(listOf(track("recovered")), nextOffset = null)
+                    }
+                },
+            )
+            advanceUntilIdle()
+
+            assertEquals(AppLoadError.RECOMMENDED, viewModel.state.value.initialLoadError)
+            assertTrue(viewModel.state.value.tracks.isEmpty())
+
+            viewModel.retry()
+            advanceUntilIdle()
+
+            assertEquals(2, attempts)
+            assertEquals(listOf("recovered"), viewModel.state.value.tracks.map(RecommendedTrackUi::id))
+            assertEquals(null, viewModel.state.value.initialLoadError)
         } finally {
             Dispatchers.resetMain()
         }

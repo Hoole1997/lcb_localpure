@@ -2,6 +2,7 @@ package com.example.lcb.app.search
 
 import androidx.annotation.DrawableRes
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.ui.AppLoadError
 import com.example.lcb.music.model.MusicArtistRef
 
 /** 搜索展示模型不暴露平台 DTO，UI 与聚合 SDK 保持单向依赖。 */
@@ -29,6 +30,7 @@ data class SearchTrackUi(
         lyrics = lyrics,
         description = description,
         artistRef = artistRef,
+        artworkThumbnailUrls = artworkThumbnailUrls,
     )
 }
 
@@ -39,6 +41,6 @@ data class SearchUiState(
     val isLoadingMore: Boolean = false,
     val hasMore: Boolean = false,
     val hasSearched: Boolean = false,
-    val errorMessage: String? = null,
-    val loadMoreErrorMessage: String? = null,
+    val initialLoadError: AppLoadError? = null,
+    val loadMoreError: AppLoadError? = null,
 )

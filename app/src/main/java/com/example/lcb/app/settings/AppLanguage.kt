@@ -14,6 +14,8 @@ enum class AppLanguage(
     val languageTag: String,
     @param:StringRes val displayNameRes: Int,
 ) {
+    /** 空语言列表是 AppCompat 官方定义的“跟随系统”模式，并作为首次安装默认项。 */
+    SYSTEM_DEFAULT("", R.string.settings_language_system_default),
     ENGLISH("en", R.string.settings_language_english),
     CHINESE_SIMPLIFIED("zh-CN", R.string.settings_language_chinese_simplified),
     JAPANESE("ja", R.string.settings_language_japanese),
@@ -26,7 +28,13 @@ enum class AppLanguage(
     VIETNAMESE("vi", R.string.settings_language_vietnamese),
     ;
 
+    /** 埋点使用稳定、无本地化的语言标识；空 tag 明确表示跟随系统。 */
+    val analyticsValue: String
+        get() = languageTag.ifBlank { SYSTEM_ANALYTICS_VALUE }.lowercase(Locale.ROOT)
+
     companion object {
+        private const val SYSTEM_ANALYTICS_VALUE = "system"
+
         fun fromTag(tag: String?): AppLanguage? {
             if (tag.isNullOrBlank()) return null
             entries.firstOrNull { it.languageTag.equals(tag, ignoreCase = true) }?.let { return it }

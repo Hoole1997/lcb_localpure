@@ -3,7 +3,8 @@ package com.example.lcb.music.internal
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * 线程安全的通用凭据池。无效凭据永久摘除；限流及网络故障进入冷却，后续请求自动探活恢复。
+ * 线程安全的通用凭据池。无效凭据永久摘除；单 Key 限流进入冷却，后续请求自动恢复。
+ * 网络与平台服务故障不改变 Key 状态，确保连接恢复后可以立即重试。
  *
  * [replace] 使 SDK 能在运行时接收 Remote Config 下发的新凭据。未变化凭据保留当前
  * 禁用/冷却状态，避免配置监听器重复回调时将已失效凭据误复活。
@@ -44,7 +45,6 @@ internal class KeyPool<T>(
         when {
             failure.invalidCredential -> state.disabled = true
             failure.rateLimited -> state.cooldownUntil = now() + (failure.retryAfterMs ?: defaultCooldownMs)
-            failure.statusCode == null || failure.statusCode >= 500 -> state.cooldownUntil = now() + defaultCooldownMs
         }
     }
 

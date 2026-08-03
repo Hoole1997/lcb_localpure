@@ -12,6 +12,12 @@
   <string name="search_cancel">Batal</string>
   <string name="search_retry">Coba lagi</string>
   <string name="search_empty">Musik tidak ditemukan</string>
+  <string name="load_error_home">Musik tidak dapat dimuat. Periksa koneksi Anda lalu coba lagi.</string>
+  <string name="load_error_recommended">Musik rekomendasi tidak dapat dimuat. Periksa koneksi Anda lalu coba lagi.</string>
+  <string name="load_error_recommended_more">Rekomendasi lainnya tidak dapat dimuat. Ketuk untuk mencoba lagi.</string>
+  <string name="load_error_search">Musik tidak dapat dicari. Periksa koneksi Anda lalu coba lagi.</string>
+  <string name="load_error_search_more">Hasil pencarian lainnya tidak dapat dimuat. Ketuk untuk mencoba lagi.</string>
+  <string name="load_error_local_music">Musik lokal tidak dapat dibaca. Coba lagi.</string>
   <string name="search_more_track">Lainnya: %1$s</string>
   <string name="recommended_title">Musik rekomendasi</string>
   <string name="recommended_play_all">Putar semua</string>
@@ -20,7 +26,7 @@
   <string name="recommended_finish_selection">Selesai memilih lagu</string>
   <string name="recommended_select_track">Pilih lagu</string>
   <string name="recommended_empty">Tidak ada musik rekomendasi</string>
-  <string name="track_action_song_info">Info lagu</string>
+  <string name="track_action_song_info">Info artis</string>
   <string name="track_action_artist_unavailable">Informasi artis tidak tersedia</string>
   <string name="track_action_add_to_playlist">Tambahkan ke daftar putar</string>
   <string name="track_action_download">Unduh</string>

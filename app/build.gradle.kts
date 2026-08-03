@@ -315,8 +315,8 @@ dependencies {
 //    implementation(project(":core"))
     implementation(project(":metrics"))
     implementation(project(":music-sdk"))
-    implementation("com.github.toukaremax:core:1.0.11")
-    implementation("com.github.toukaremax:bill:1.0.44") {
+    implementation("com.github.toukaremax:core:1.0.14")
+    implementation("com.github.toukaremax:bill:1.0.48") {
         // Launcher SDK provides com.unity3d.ads-mediation:mediation-sdk:9.2.0.
         // Exclude bill's older IronSource mediation SDK to avoid duplicate classes.
         exclude(group = "com.ironsource.sdk", module = "mediationsdk")

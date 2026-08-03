@@ -7,6 +7,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.ui.AppLoadError
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -57,7 +58,7 @@ class LocalMusicViewModel(
             },
             totalTrackCount = source.tracks.size,
             folderCount = availableFolders.size,
-            errorMessage = source.errorMessage,
+            loadError = source.loadError,
             miniPlayer = currentPlayback?.let { LocalMusicMiniPlayerUi(it.track, it.isPlaying) },
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, LocalMusicUiState())
@@ -96,7 +97,7 @@ class LocalMusicViewModel(
 
     private fun observeMediaStore() {
         observationJob?.cancel()
-        content.update { it.copy(hasPermission = true, isLoading = it.tracks.isEmpty(), errorMessage = null) }
+        content.update { it.copy(hasPermission = true, isLoading = it.tracks.isEmpty(), loadError = null) }
         observationJob = viewModelScope.launch {
             repository.observeTracks()
                 .catch { error ->
@@ -104,7 +105,7 @@ class LocalMusicViewModel(
                         ContentState(
                             hasPermission = error !is SecurityException,
                             tracks = if (error is SecurityException) emptyList() else it.tracks,
-                            errorMessage = error.message ?: "Unable to read local music",
+                            loadError = AppLoadError.LOCAL_MUSIC,
                         )
                     }
                 }
@@ -118,7 +119,7 @@ class LocalMusicViewModel(
         val hasPermission: Boolean = false,
         val isLoading: Boolean = false,
         val tracks: List<LocalMusicTrack> = emptyList(),
-        val errorMessage: String? = null,
+        val loadError: AppLoadError? = null,
     )
 
     private data class PlaybackSnapshot(val track: PlayerTrack, val isPlaying: Boolean)

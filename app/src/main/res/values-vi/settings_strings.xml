@@ -11,4 +11,5 @@
   <string name="settings_link_unavailable">Liên kết này chưa được cấu hình</string>
   <string name="settings_link_open_failed">Không có trình duyệt để mở liên kết này</string>
   <string name="action_back">Quay lại</string>
+  <string name="settings_language_system_default">Theo ngôn ngữ hệ thống</string>
 </resources>

@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lcb.app.MusicDependencies
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.artist.ArtistActivity
 import com.example.lcb.app.databinding.ActivityRecommendedMusicBinding
 import com.example.lcb.app.player.MiniPlayerViewBinder
@@ -38,11 +39,13 @@ import com.example.lcb.app.player.toPlayerTrackQueue
 import com.example.lcb.app.trackactions.TrackActionUiModel
 import com.example.lcb.app.trackactions.TrackActionsController
 import com.example.lcb.app.utils.BottomNativeAdController
+import com.example.lcb.app.utils.BusinessAdSwitchKey
 import com.example.lcb.app.utils.InterstitialAdPlacement
 import com.example.lcb.app.utils.loadRequestedPostNavigationInterstitial
 import com.example.lcb.app.utils.requestPostNavigationInterstitial
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.launch
+import net.corekit.core.controller.AdSlotSwitchController
 
 class RecommendedMusicActivity : AppCompatActivity() {
     private lateinit var binding: ActivityRecommendedMusicBinding
@@ -55,13 +58,15 @@ class RecommendedMusicActivity : AppCompatActivity() {
     private val musicAdapter by lazy(LazyThreadSafetyMode.NONE) {
         RecommendedMusicAdapter(
             onTrackClick = ::playTrack,
-            onArtistClick = { item -> item.track.artistRef?.let { ArtistActivity.open(this, it) } },
+            onArtistClick = ::openArtist,
             onTrackMore = ::showTrackActions,
             onSelectionChanged = { viewModel.toggleSelection(it.id) },
             onRetryLoadMore = viewModel::retry,
         )
     }
-    private val trackActions by lazy(LazyThreadSafetyMode.NONE) { TrackActionsController(this) }
+    private val trackActions by lazy(LazyThreadSafetyMode.NONE) {
+        TrackActionsController(this, MusicAnalytics.Surface.RECOMMENDED)
+    }
     private val miniPlayerBinder by lazy(LazyThreadSafetyMode.NONE) { MiniPlayerViewBinder(binding.miniPlayer) }
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
@@ -95,9 +100,8 @@ class RecommendedMusicActivity : AppCompatActivity() {
             miniPlayerHost = binding.miniPlayerHost,
         )
         observeState()
-        // Figma 的 60dp 广告位使用真实广告；加载失败时 GONE，不留下空白区域。
-        bottomAdController.loadOnce()
-        loadRequestedPostNavigationInterstitial(savedInstanceState)
+        if (savedInstanceState == null) MusicAnalytics.screenView(MusicAnalytics.Screen.RECOMMENDED)
+        loadRequestedPostNavigationInterstitial(savedInstanceState, position = TAG)
     }
 
     override fun onStart() {
@@ -176,9 +180,28 @@ class RecommendedMusicActivity : AppCompatActivity() {
 
     private fun configureMiniPlayer() {
         miniPlayerBinder.setCallbacks(
-            onOpenPlayer = { PlayerActivity.openExisting(this) },
+            onOpenPlayer = {
+                MusicAnalytics.playback(
+                    MusicAnalytics.PlaybackAction.OPEN_PLAYER,
+                    MusicAnalytics.Surface.RECOMMENDED_MINI_PLAYER,
+                    viewModel.state.value.miniPlayer?.track?.artistRef?.platform,
+                )
+                PlayerActivity.openExisting(this)
+            },
             onPlayPause = {
-                controller?.let { player -> if (player.playWhenReady) player.pause() else player.play() }
+                controller?.let { player ->
+                    MusicAnalytics.playback(
+                        if (player.playWhenReady) {
+                            MusicAnalytics.PlaybackAction.PAUSE
+                        } else {
+                            MusicAnalytics.PlaybackAction.PLAY
+                        },
+                        MusicAnalytics.Surface.RECOMMENDED_MINI_PLAYER,
+                        viewModel.state.value.miniPlayer?.track?.artistRef?.platform,
+                        player.mediaItemCount,
+                    )
+                    if (player.playWhenReady) player.pause() else player.play()
+                }
             },
             onQueue = ::showPlaybackQueue,
         )
@@ -194,13 +217,13 @@ class RecommendedMusicActivity : AppCompatActivity() {
 
     private fun renderState(state: RecommendedMusicUiState) {
         musicAdapter.submitState(state)
-        val showError = state.errorMessage != null && state.tracks.isEmpty() && !state.isInitialLoading
-        val showEmpty = !state.isInitialLoading && state.errorMessage == null && state.tracks.isEmpty()
+        val showError = state.initialLoadError != null && state.tracks.isEmpty() && !state.isInitialLoading
+        val showEmpty = !state.isInitialLoading && state.initialLoadError == null && state.tracks.isEmpty()
         binding.stateContainer.isVisible = showError || showEmpty
-        binding.stateMessage.text = when {
-            showError -> state.errorMessage
-            showEmpty -> getString(R.string.recommended_empty)
-            else -> ""
+        when {
+            showError -> binding.stateMessage.setText(requireNotNull(state.initialLoadError).messageRes)
+            showEmpty -> binding.stateMessage.setText(R.string.recommended_empty)
+            else -> binding.stateMessage.text = ""
         }
         binding.retry.isVisible = showError
         binding.playAll.isEnabled = state.tracks.isNotEmpty()
@@ -217,6 +240,13 @@ class RecommendedMusicActivity : AppCompatActivity() {
             getString(R.string.recommended_play_all)
         }
         renderMiniPlayer(state.miniPlayer)
+        if (
+            !state.isInitialLoading &&
+            AdSlotSwitchController.isEnabled(BusinessAdSwitchKey.RECOMMENDED_MUSIC_BOTTOM_NATIVE)
+        ) {
+            // 初始化完成后最多请求一次；加载失败由控制器收起底部广告容器。
+            bottomAdController.loadOnce(position = TAG)
+        }
     }
 
     private fun renderMiniPlayer(model: RecommendedMiniPlayerUi?) {
@@ -244,6 +274,11 @@ class RecommendedMusicActivity : AppCompatActivity() {
     private fun playTrack(item: RecommendedTrackUi) {
         val queue = viewModel.queueForTrack()
         if (queue.isEmpty()) return
+        MusicAnalytics.trackSelected(
+            MusicAnalytics.Surface.RECOMMENDED,
+            item.track.artistRef?.platform,
+            queue.size,
+        )
         viewModel.updatePlayback(item.track, isPlaying = true, isActivelyPlaying = true)
         PlayerActivity.openQueue(this, queue, item.id)
     }
@@ -251,6 +286,12 @@ class RecommendedMusicActivity : AppCompatActivity() {
     private fun playAll() {
         val queue = viewModel.playAllQueue()
         val first = queue.firstOrNull() ?: return
+        MusicAnalytics.playback(
+            MusicAnalytics.PlaybackAction.PLAY_ALL,
+            MusicAnalytics.Surface.RECOMMENDED,
+            first.artistRef?.platform,
+            queue.size,
+        )
         viewModel.updatePlayback(first, isPlaying = true, isActivelyPlaying = true)
         PlayerActivity.openQueue(this, queue, first.id)
     }
@@ -271,6 +312,21 @@ class RecommendedMusicActivity : AppCompatActivity() {
                 artistRef = item.track.artistRef,
             ),
         )
+    }
+
+    private fun openArtist(item: RecommendedTrackUi) {
+        item.track.artistRef?.let { artist ->
+            MusicAnalytics.trackAction(
+                MusicAnalytics.TrackAction.OPEN_ARTIST,
+                MusicAnalytics.Surface.RECOMMENDED,
+                artist.platform,
+            )
+            ArtistActivity.open(
+                this,
+                artist,
+                InterstitialAdPlacement.ARTIST_LIST_NAME_ENTRY,
+            )
+        }
     }
 
     private fun connectPlaybackController() {
@@ -314,6 +370,11 @@ class RecommendedMusicActivity : AppCompatActivity() {
         val player = controller ?: return
         val tracks = player.toPlayerTrackQueue()
         if (tracks.isEmpty()) return
+        MusicAnalytics.playback(
+            MusicAnalytics.PlaybackAction.QUEUE_OPEN,
+            MusicAnalytics.Surface.RECOMMENDED_MINI_PLAYER,
+            queueSize = tracks.size,
+        )
         queueSheet?.dismiss()
         queueSheet = PlaybackQueueBottomSheet(
             context = this,
@@ -322,6 +383,12 @@ class RecommendedMusicActivity : AppCompatActivity() {
             isPlaying = player.isPlaying,
             onTrackSelected = { selected ->
                 tracks.indexOfFirst { it.id == selected.id }.takeIf { it >= 0 }?.let { index ->
+                    MusicAnalytics.playback(
+                        MusicAnalytics.PlaybackAction.QUEUE_SELECT,
+                        MusicAnalytics.Surface.RECOMMENDED_MINI_PLAYER,
+                        selected.artistRef?.platform,
+                        tracks.size,
+                    )
                     player.seekToDefaultPosition(index)
                     player.play()
                 }
@@ -335,10 +402,13 @@ class RecommendedMusicActivity : AppCompatActivity() {
         private const val LOAD_MORE_DISTANCE = 5
         private const val LIST_BOTTOM_PADDING_DP = 16
 
+        private const val TAG = "RecommendedMusicActivity"
         fun open(context: Context) {
             context.startActivity(
                 Intent(context, RecommendedMusicActivity::class.java)
-                    .requestPostNavigationInterstitial(InterstitialAdPlacement.CONTENT_PAGE),
+                    .requestPostNavigationInterstitial(
+                        InterstitialAdPlacement.HOME_RECOMMENDED_MORE_ENTRY,
+                    ),
             )
         }
     }

@@ -1,10 +1,12 @@
 package com.example.lcb.app.localmusic
 
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.ui.AppLoadError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -96,6 +98,27 @@ class LocalMusicViewModelTest {
 
             assertFalse(viewModel.state.value.hasPermission)
             assertTrue(viewModel.state.value.tracks.isEmpty())
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `media store exception is exposed as localized local music error semantic`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repository = object : LocalMusicRepository {
+                override fun observeTracks(): Flow<List<LocalMusicTrack>> = flow {
+                    error("English platform error that must not reach the UI")
+                }
+            }
+            val viewModel = LocalMusicViewModel(repository)
+
+            viewModel.setPermissionGranted(true)
+            advanceUntilIdle()
+
+            assertEquals(AppLoadError.LOCAL_MUSIC, viewModel.state.value.loadError)
+            assertTrue(viewModel.state.value.hasPermission)
         } finally {
             Dispatchers.resetMain()
         }

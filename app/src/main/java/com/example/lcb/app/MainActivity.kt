@@ -9,13 +9,12 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.databinding.ActivityMainHomeBinding
 import com.example.lcb.app.artist.ArtistActivity
 import com.example.lcb.app.home.*
@@ -25,13 +24,18 @@ import com.example.lcb.app.library.dialog.PlaylistDialogsController
 import com.example.lcb.app.player.PlayerActivity
 import com.example.lcb.app.player.PlaybackQueueBottomSheet
 import com.example.lcb.app.player.PlaybackService
+import com.example.lcb.app.player.MiniPlayerViewBinder
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.player.artworkCandidates
 import com.example.lcb.app.player.toPlayerTrack
 import com.example.lcb.app.player.toPlayerTrackQueue
 import com.example.lcb.app.trackactions.TrackActionUiModel
 import com.example.lcb.app.trackactions.TrackActionsController
 import com.example.lcb.app.settings.SettingsActivity
+import com.example.lcb.app.ui.AppLoadError
 import com.example.lcb.app.utils.BottomNativeAdController
+import com.example.lcb.app.utils.BusinessAdSwitchKey
+import com.example.lcb.app.utils.InterstitialAdPlacement
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -40,10 +44,11 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
+import net.corekit.core.controller.AdSlotSwitchController
 
 class MainActivity : AppCompatActivity(), HomeCallbacks {
     private lateinit var binding: ActivityMainHomeBinding
-    private var displayedError: String? = null
+    private var displayedError: AppLoadError? = null
     private val libraryRepository by lazy(LazyThreadSafetyMode.NONE) {
         MusicLibraryDependencies.repository(this)
     }
@@ -54,11 +59,18 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
         HomeViewModel.Factory(homeRepository)
     }
     private val homeAdapter by lazy(LazyThreadSafetyMode.NONE) { HomeAdapter(this) }
+    private val miniPlayerBinder by lazy(LazyThreadSafetyMode.NONE) {
+        MiniPlayerViewBinder(binding.miniPlayer)
+    }
     private val playlistDialogs by lazy(LazyThreadSafetyMode.NONE) {
         PlaylistDialogsController(this, libraryRepository)
     }
     private val trackActions by lazy(LazyThreadSafetyMode.NONE) {
-        TrackActionsController(this, repository = libraryRepository)
+        TrackActionsController(
+            activity = this,
+            surface = MusicAnalytics.Surface.HOME,
+            repository = libraryRepository,
+        )
     }
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
@@ -82,6 +94,7 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
         configureAds()
         observeState()
         configureBackNavigation()
+        if (savedInstanceState == null) MusicAnalytics.screenView(MusicAnalytics.Screen.HOME)
     }
 
     override fun onStart() {
@@ -96,6 +109,7 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
         controller = null
         controllerFuture?.let(MediaController::releaseFuture)
         controllerFuture = null
+        miniPlayerBinder.updateControllerState(controllerReady = false, hasQueue = false)
         super.onStop()
     }
 
@@ -112,14 +126,34 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
     }
 
     private fun configureMiniPlayer() {
-        binding.miniPlayer.cover.clipToOutline = true
-        binding.miniPlayer.root.isVisible = false
-        binding.miniPlayer.playPause.isEnabled = false
-        binding.miniPlayer.queue.isEnabled = false
-        binding.miniPlayer.playPause.setOnClickListener {
-            controller?.let { player -> if (player.playWhenReady) player.pause() else player.play() }
-        }
-        binding.miniPlayer.queue.setOnClickListener { showPlaybackQueue() }
+        miniPlayerBinder.setCallbacks(
+            onOpenPlayer = {
+                val track = viewModel.uiState.value.miniPlayer?.track ?: return@setCallbacks
+                MusicAnalytics.playback(
+                    MusicAnalytics.PlaybackAction.OPEN_PLAYER,
+                    MusicAnalytics.Surface.HOME_MINI_PLAYER,
+                    track.artistRef?.platform,
+                )
+                PlayerActivity.openExisting(this)
+            },
+            onPlayPause = {
+                controller?.let { player ->
+                    MusicAnalytics.playback(
+                        action = if (player.playWhenReady) {
+                            MusicAnalytics.PlaybackAction.PAUSE
+                        } else {
+                            MusicAnalytics.PlaybackAction.PLAY
+                        },
+                        surface = MusicAnalytics.Surface.HOME_MINI_PLAYER,
+                        platform = viewModel.uiState.value.miniPlayer?.track?.artistRef?.platform,
+                        queueSize = player.mediaItemCount,
+                    )
+                    if (player.playWhenReady) player.pause() else player.play()
+                }
+            },
+            onQueue = ::showPlaybackQueue,
+        )
+        miniPlayerBinder.render(model = null, controllerReady = false, hasQueue = false)
     }
 
     private fun configureAds() {
@@ -139,39 +173,44 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
                     // submitList 使用 AsyncListDiffer，差异计算不会阻塞主线程。
                     homeAdapter.submitList(state.items)
                     renderMiniPlayer(state.miniPlayer)
-                    renderLoadError(state.errorMessage)
-                    if (!state.isLoading) bottomAdController.loadOnce()
+                    renderLoadError(state.loadError)
+                    if (
+                        !state.isLoading &&
+                        AdSlotSwitchController.isEnabled(BusinessAdSwitchKey.HOME_BOTTOM_NATIVE)
+                    ) {
+                        bottomAdController.loadOnce(position = TAG)
+                    }
                 }
             }
         }
     }
 
-    private fun renderLoadError(message: String?) {
-        if (message == null) {
+    private fun renderLoadError(error: AppLoadError?) {
+        if (error == null) {
             displayedError = null
             return
         }
-        if (displayedError != message) {
-            displayedError = message
-            toast(message)
+        if (displayedError != error) {
+            displayedError = error
+            toast(getString(error.messageRes))
         }
     }
 
     private fun renderMiniPlayer(player: MiniPlayerUi?) {
         bottomAdController.setMiniPlayerVisible(player != null)
-        with(binding.miniPlayer) {
-            root.isVisible = player != null
-            if (player == null) return
-            root.setOnClickListener { PlayerActivity.openExisting(this@MainActivity) }
-            title.text = getString(R.string.home_player_title, player.track.title, player.track.artist)
-            playPause.setImageResource(if (player.isPlaying) R.drawable.ic_home_pause else R.drawable.ic_home_play)
-            playPause.contentDescription = getString(if (player.isPlaying) R.string.home_pause else R.string.home_play)
-            playPause.isEnabled = controller != null
-            playPause.alpha = if (playPause.isEnabled) 1f else 0.45f
-            queue.isEnabled = controller != null
-            queue.alpha = if (queue.isEnabled) 1f else 0.45f
-            Glide.with(cover).load(player.track.artworkUrl ?: player.track.artworkRes).centerCrop().into(cover)
-        }
+        miniPlayerBinder.render(
+            model = player?.let {
+                val track = it.track.toPlayerTrack()
+                MiniPlayerViewBinder.Model(
+                    track = track,
+                    artworkUrls = track.artworkCandidates(),
+                    artworkFallbackRes = it.track.artworkRes,
+                    isPlaying = it.isPlaying,
+                )
+            },
+            controllerReady = controller != null,
+            hasQueue = controller?.mediaItemCount?.let { it > 0 } == true,
+        )
     }
 
     private fun configureInsets() {
@@ -188,8 +227,13 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
         })
     }
 
-    override fun onSearch() = com.example.lcb.app.search.SearchActivity.open(this)
-    override fun onSettings() = SettingsActivity.open(this)
+    override fun onSearch() {
+        com.example.lcb.app.search.SearchActivity.open(this)
+    }
+
+    override fun onSettings() {
+        SettingsActivity.open(this)
+    }
 
     override fun onSectionAction(sectionId: Long) {
         when (sectionId) {
@@ -202,12 +246,28 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
     }
 
     override fun onTrackClick(track: HomeTrackUi, queue: List<HomeTrackUi>) {
+        MusicAnalytics.trackSelected(
+            source = MusicAnalytics.Surface.HOME,
+            platform = track.artistRef?.platform,
+            queueSize = queue.size,
+        )
         // 页面跳转前做乐观展示；返回首页时会立即由 MediaSession 真实状态校准。
         viewModel.updatePlayback(track, true)
         PlayerActivity.open(this, queue, track.id)
     }
     override fun onArtistClick(track: HomeTrackUi) {
-        track.artistRef?.let { ArtistActivity.open(this, it) }
+        track.artistRef?.let { artist ->
+            MusicAnalytics.trackAction(
+                MusicAnalytics.TrackAction.OPEN_ARTIST,
+                MusicAnalytics.Surface.HOME,
+                artist.platform,
+            )
+            ArtistActivity.open(
+                this,
+                artist,
+                InterstitialAdPlacement.ARTIST_LIST_NAME_ENTRY,
+            )
+        }
     }
     override fun onTrackMore(track: HomeTrackUi) {
         trackActions.show(
@@ -240,8 +300,7 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 
     private fun connectPlaybackController() {
-        binding.miniPlayer.playPause.isEnabled = false
-        binding.miniPlayer.queue.isEnabled = false
+        miniPlayerBinder.updateControllerState(controllerReady = false, hasQueue = false)
         val token = SessionToken(this, ComponentName(this, PlaybackService::class.java))
         val future = MediaController.Builder(this, token).buildAsync()
         controllerFuture = future
@@ -252,8 +311,10 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
                     controller = mediaController
                     mediaController.addListener(playerListener)
                     syncPlaybackState(mediaController)
-                    binding.miniPlayer.playPause.isEnabled = mediaController.currentMediaItem != null
-                    binding.miniPlayer.queue.isEnabled = mediaController.mediaItemCount > 0
+                    miniPlayerBinder.updateControllerState(
+                        controllerReady = mediaController.currentMediaItem != null,
+                        hasQueue = mediaController.mediaItemCount > 0,
+                    )
                 }
             },
             ContextCompat.getMainExecutor(this),
@@ -281,6 +342,7 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
             artist = playerTrack.artist,
             artworkRes = R.drawable.home_cover_recommended_3,
             artworkUrl = playerTrack.artworkUrl,
+            artworkThumbnailUrls = playerTrack.artworkCandidates(),
             streamUrl = playerTrack.streamUrl,
             durationMs = playerTrack.durationMs,
             lyrics = playerTrack.lyrics,
@@ -293,6 +355,11 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
         val player = controller ?: return
         val tracks = player.toPlayerTrackQueue()
         if (tracks.isEmpty()) return
+        MusicAnalytics.playback(
+            MusicAnalytics.PlaybackAction.QUEUE_OPEN,
+            MusicAnalytics.Surface.HOME_MINI_PLAYER,
+            queueSize = tracks.size,
+        )
         queueSheet?.dismiss()
         queueSheet = PlaybackQueueBottomSheet(
             context = this,
@@ -301,6 +368,12 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
             isPlaying = player.isPlaying,
             onTrackSelected = { selected ->
                 tracks.indexOfFirst { it.id == selected.id }.takeIf { it >= 0 }?.let { index ->
+                    MusicAnalytics.playback(
+                        MusicAnalytics.PlaybackAction.QUEUE_SELECT,
+                        MusicAnalytics.Surface.HOME_MINI_PLAYER,
+                        selected.artistRef?.platform,
+                        tracks.size,
+                    )
                     player.seekToDefaultPosition(index)
                     player.play()
                 }
@@ -311,5 +384,6 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
 
     private companion object {
         const val HOME_LIST_BOTTOM_PADDING_DP = 18
+        private const val TAG = "MainActivity"
     }
 }

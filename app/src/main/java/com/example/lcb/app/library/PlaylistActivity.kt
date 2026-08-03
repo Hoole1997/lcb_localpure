@@ -31,18 +31,21 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lcb.app.MusicLibraryDependencies
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.databinding.ActivityPlaylistBinding
 import com.example.lcb.app.player.PlaybackService
 import com.example.lcb.app.player.PlayerActivity
 import com.example.lcb.app.trackactions.TrackActionUiModel
 import com.example.lcb.app.trackactions.TrackActionsController
 import com.example.lcb.app.utils.BottomNativeAdController
+import com.example.lcb.app.utils.BusinessAdSwitchKey
 import com.example.lcb.app.utils.InterstitialAdPlacement
 import com.example.lcb.app.utils.loadRequestedPostNavigationInterstitial
 import com.example.lcb.app.utils.requestPostNavigationInterstitial
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.launch
+import net.corekit.core.controller.AdSlotSwitchController
 
 class PlaylistActivity : AppCompatActivity() {
     private lateinit var binding: ActivityPlaylistBinding
@@ -74,6 +77,11 @@ class PlaylistActivity : AppCompatActivity() {
     private val trackActions by lazy(LazyThreadSafetyMode.NONE) {
         TrackActionsController(
             activity = this,
+            surface = if (collection == LibraryCollection.Favorites) {
+                MusicAnalytics.Surface.FAVORITES
+            } else {
+                MusicAnalytics.Surface.PLAYLIST
+            },
             repository = repository,
         )
     }
@@ -110,7 +118,16 @@ class PlaylistActivity : AppCompatActivity() {
         )
         configureBackNavigation()
         observeState()
-        loadRequestedPostNavigationInterstitial(savedInstanceState)
+        if (savedInstanceState == null) {
+            MusicAnalytics.screenView(
+                if (collection == LibraryCollection.Favorites) {
+                    MusicAnalytics.Screen.FAVORITES
+                } else {
+                    MusicAnalytics.Screen.PLAYLIST
+                },
+            )
+        }
+        loadRequestedPostNavigationInterstitial(savedInstanceState, position = TAG)
     }
 
     override fun onStart() {
@@ -229,22 +246,45 @@ class PlaylistActivity : AppCompatActivity() {
             if (state.isFavorites) R.string.playlist_favorites_empty else R.string.playlist_tracks_empty,
         )
         bottomAdController.setSuppressed(state.isSelectionMode)
-        if (state.tracks.isNotEmpty()) bottomAdController.loadOnce()
+        val nativeAdSwitchKey = if (state.isFavorites) {
+            BusinessAdSwitchKey.FAVORITES_BOTTOM_NATIVE
+        } else {
+            BusinessAdSwitchKey.PLAYLIST_DETAIL_BOTTOM_NATIVE
+        }
+        if (
+            state.tracks.isNotEmpty() &&
+            AdSlotSwitchController.isEnabled(nativeAdSwitchKey)
+        ) {
+            bottomAdController.loadOnce(position = TAG)
+        }
         invalidateOptionsMenu()
     }
 
     private fun handleEvent(event: PlaylistDetailEvent) {
         when (event) {
-            PlaylistDetailEvent.PlaylistDeleted -> finish()
-            is PlaylistDetailEvent.TracksRemoved -> Toast.makeText(
-                this,
-                resources.getQuantityString(
-                    R.plurals.playlist_removed_count,
+            PlaylistDetailEvent.PlaylistDeleted -> {
+                MusicAnalytics.playlist(
+                    MusicAnalytics.PlaylistAction.DELETE,
+                    MusicAnalytics.Outcome.SUCCESS,
+                )
+                finish()
+            }
+            is PlaylistDetailEvent.TracksRemoved -> {
+                MusicAnalytics.playlist(
+                    MusicAnalytics.PlaylistAction.REMOVE_TRACKS,
+                    MusicAnalytics.Outcome.SUCCESS,
                     event.count,
-                    event.count,
-                ),
-                Toast.LENGTH_SHORT,
-            ).show()
+                )
+                Toast.makeText(
+                    this,
+                    resources.getQuantityString(
+                        R.plurals.playlist_removed_count,
+                        event.count,
+                        event.count,
+                    ),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
             is PlaylistDetailEvent.Error -> Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show()
         }
     }
@@ -252,6 +292,15 @@ class PlaylistActivity : AppCompatActivity() {
     private fun playTrack(track: LibraryTrack) {
         val queue = viewModel.playerQueue()
         if (queue.isEmpty()) return
+        MusicAnalytics.trackSelected(
+            if (collection == LibraryCollection.Favorites) {
+                MusicAnalytics.Surface.FAVORITES
+            } else {
+                MusicAnalytics.Surface.PLAYLIST
+            },
+            track.artistRef?.platform,
+            queue.size,
+        )
         PlayerActivity.openQueue(this, queue, track.id)
     }
 
@@ -322,11 +371,15 @@ class PlaylistActivity : AppCompatActivity() {
         private const val INVALID_PLAYLIST_ID = -1L
         private const val TRACK_LIST_BOTTOM_PADDING_DP = 20
 
+        private const val TAG = "PlaylistActivity"
+
         fun openFavorites(context: Context) {
             context.startActivity(
                 Intent(context, PlaylistActivity::class.java)
                     .putExtra(EXTRA_FAVORITES, true)
-                    .requestPostNavigationInterstitial(InterstitialAdPlacement.CONTENT_PAGE),
+                    .requestPostNavigationInterstitial(
+                        InterstitialAdPlacement.HOME_FAVORITES_ENTRY,
+                    ),
             )
         }
 
@@ -334,7 +387,9 @@ class PlaylistActivity : AppCompatActivity() {
             context.startActivity(
                 Intent(context, PlaylistActivity::class.java)
                     .putExtra(EXTRA_PLAYLIST_ID, playlistId)
-                    .requestPostNavigationInterstitial(InterstitialAdPlacement.CONTENT_PAGE),
+                    .requestPostNavigationInterstitial(
+                        InterstitialAdPlacement.HOME_PLAYLIST_ENTRY,
+                    ),
             )
         }
     }

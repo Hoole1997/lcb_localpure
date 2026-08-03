@@ -12,6 +12,12 @@
   <string name="search_cancel">Batal</string>
   <string name="search_retry">Cuba lagi</string>
   <string name="search_empty">Tiada muzik ditemui</string>
+  <string name="load_error_home">Muzik tidak dapat dimuatkan. Semak sambungan anda dan cuba lagi.</string>
+  <string name="load_error_recommended">Muzik disyorkan tidak dapat dimuatkan. Semak sambungan anda dan cuba lagi.</string>
+  <string name="load_error_recommended_more">Lebih banyak cadangan tidak dapat dimuatkan. Ketik untuk cuba lagi.</string>
+  <string name="load_error_search">Muzik tidak dapat dicari. Semak sambungan anda dan cuba lagi.</string>
+  <string name="load_error_search_more">Lebih banyak hasil carian tidak dapat dimuatkan. Ketik untuk cuba lagi.</string>
+  <string name="load_error_local_music">Muzik tempatan tidak dapat dibaca. Cuba lagi.</string>
   <string name="search_more_track">Lagi: %1$s</string>
   <string name="recommended_title">Muzik disyorkan</string>
   <string name="recommended_play_all">Main semua</string>
@@ -20,7 +26,7 @@
   <string name="recommended_finish_selection">Selesai memilih lagu</string>
   <string name="recommended_select_track">Pilih lagu</string>
   <string name="recommended_empty">Tiada muzik disyorkan</string>
-  <string name="track_action_song_info">Maklumat lagu</string>
+  <string name="track_action_song_info">Maklumat artis</string>
   <string name="track_action_artist_unavailable">Maklumat artis tidak tersedia</string>
   <string name="track_action_add_to_playlist">Tambah ke senarai main</string>
   <string name="track_action_download">Muat turun</string>

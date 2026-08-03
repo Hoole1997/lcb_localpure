@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.lcb.app.databinding.ItemSearchLoadingBinding
 import com.example.lcb.app.databinding.ItemSearchLoadMoreErrorBinding
 import com.example.lcb.app.databinding.ItemSearchResultBinding
+import com.example.lcb.app.ui.AppLoadError
 import com.example.lcb.app.ui.TrackArtworkLoader
 
 sealed interface SearchListItem {
@@ -31,7 +32,7 @@ sealed interface SearchListItem {
     }
 
     data object LoadingMore : SearchListItem { override val stableId = Long.MAX_VALUE - 1 }
-    data class LoadMoreError(val message: String) : SearchListItem { override val stableId = Long.MAX_VALUE }
+    data class LoadMoreError(val error: AppLoadError) : SearchListItem { override val stableId = Long.MAX_VALUE }
 }
 
 class SearchResultAdapter(
@@ -57,8 +58,8 @@ class SearchResultAdapter(
                     addAll(state.tracks.map(SearchListItem::Track))
                     when {
                         state.isLoadingMore -> add(SearchListItem.LoadingMore)
-                        state.loadMoreErrorMessage != null -> add(
-                            SearchListItem.LoadMoreError(state.loadMoreErrorMessage),
+                        state.loadMoreError != null -> add(
+                            SearchListItem.LoadMoreError(state.loadMoreError),
                         )
                     }
                 }
@@ -92,7 +93,7 @@ class SearchResultAdapter(
             is SearchListItem.Track -> (holder as TrackHolder).bind(item.value)
             is SearchListItem.Skeleton -> Unit
             SearchListItem.LoadingMore -> Unit
-            is SearchListItem.LoadMoreError -> (holder as ErrorHolder).bind(item.message)
+            is SearchListItem.LoadMoreError -> (holder as ErrorHolder).bind(item.error)
         }
     }
 
@@ -190,8 +191,8 @@ class SearchResultAdapter(
     private inner class ErrorHolder(
         private val binding: ItemSearchLoadMoreErrorBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(message: String) {
-            binding.message.text = message
+        fun bind(error: AppLoadError) {
+            binding.message.setText(error.messageRes)
             binding.root.setOnClickListener { onRetryLoadMore() }
         }
     }

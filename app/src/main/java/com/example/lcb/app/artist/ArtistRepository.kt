@@ -108,6 +108,8 @@ class MusicSdkArtistRepository(
         lyrics = track.lyrics,
         description = track.description,
         artistRef = track.artist,
+        artworkThumbnailUrls = track.artwork?.thumbnailCandidates().orEmpty()
+            .ifEmpty { listOfNotNull(track.artworkUrl) },
     )
 
     private fun toCollectionUi(collection: MusicCollection) = ArtistCollectionUi(

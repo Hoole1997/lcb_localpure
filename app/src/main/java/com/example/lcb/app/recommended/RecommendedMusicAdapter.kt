@@ -14,6 +14,7 @@ import com.example.lcb.app.R
 import com.example.lcb.app.databinding.ItemRecommendedMusicBinding
 import com.example.lcb.app.databinding.ItemSearchLoadingBinding
 import com.example.lcb.app.databinding.ItemSearchLoadMoreErrorBinding
+import com.example.lcb.app.ui.AppLoadError
 import com.example.lcb.app.ui.TrackArtworkLoader
 
 sealed interface RecommendedListItem {
@@ -31,7 +32,7 @@ sealed interface RecommendedListItem {
     }
 
     data object LoadingMore : RecommendedListItem { override val stableId = Long.MAX_VALUE - 1 }
-    data class LoadMoreError(val message: String) : RecommendedListItem { override val stableId = Long.MAX_VALUE }
+    data class LoadMoreError(val error: AppLoadError) : RecommendedListItem { override val stableId = Long.MAX_VALUE }
 }
 
 class RecommendedMusicAdapter(
@@ -56,8 +57,8 @@ class RecommendedMusicAdapter(
                     addAll(state.tracks.map { RecommendedListItem.Track(it, state.isSelectionMode) })
                     when {
                         state.isLoadingMore -> add(RecommendedListItem.LoadingMore)
-                        state.loadMoreErrorMessage != null -> add(
-                            RecommendedListItem.LoadMoreError(state.loadMoreErrorMessage),
+                        state.loadMoreError != null -> add(
+                            RecommendedListItem.LoadMoreError(state.loadMoreError),
                         )
                     }
                 }
@@ -89,7 +90,7 @@ class RecommendedMusicAdapter(
             is RecommendedListItem.Track -> (holder as TrackHolder).bind(item)
             is RecommendedListItem.Skeleton -> Unit
             RecommendedListItem.LoadingMore -> Unit
-            is RecommendedListItem.LoadMoreError -> (holder as ErrorHolder).bind(item.message)
+            is RecommendedListItem.LoadMoreError -> (holder as ErrorHolder).bind(item.error)
         }
     }
 
@@ -244,8 +245,8 @@ class RecommendedMusicAdapter(
     private inner class ErrorHolder(
         private val binding: ItemSearchLoadMoreErrorBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(message: String) {
-            binding.message.text = message
+        fun bind(error: AppLoadError) {
+            binding.message.setText(error.messageRes)
             binding.root.setOnClickListener { onRetryLoadMore() }
         }
     }

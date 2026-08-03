@@ -17,23 +17,32 @@ internal fun Player.toPlayerTrackQueue(): List<PlayerTrack> = List(mediaItemCoun
     )
 }
 
-internal fun MediaItem.toPlayerTrack(durationMs: Long): PlayerTrack = PlayerTrack(
-    id = mediaId,
-    title = mediaMetadata.title?.toString().orEmpty(),
-    artist = mediaMetadata.artist?.toString().orEmpty(),
-    artworkUrl = mediaMetadata.artworkUri?.toString(),
-    streamUrl = localConfiguration?.uri?.toString().orEmpty(),
-    durationMs = durationMs,
-    lyrics = mediaMetadata.extras?.getString(MEDIA_METADATA_LYRICS_KEY),
-    description = mediaMetadata.extras?.getString(MEDIA_METADATA_DESCRIPTION_KEY),
-    artistRef = mediaMetadata.extras?.let { extras ->
-        val artistId = extras.getString(MEDIA_METADATA_ARTIST_ID_KEY).orEmpty()
-        val platform = extras.getString(MEDIA_METADATA_ARTIST_PLATFORM_KEY)
-            ?.let { raw -> runCatching { MusicPlatform.valueOf(raw) }.getOrNull() }
-        if (artistId.isNotBlank() && platform != null) {
-            MusicArtistRef(artistId, platform, mediaMetadata.artist?.toString().orEmpty())
-        } else {
-            null
-        }
-    },
-)
+internal fun MediaItem.toPlayerTrack(durationMs: Long): PlayerTrack {
+    val artworkUrl = mediaMetadata.artworkUri?.toString()
+    val extras = mediaMetadata.extras
+    val artworkThumbnailUrls = extras
+        ?.getStringArrayList(MEDIA_METADATA_ARTWORK_THUMBNAILS_KEY)
+        .orEmpty()
+        .ifEmpty { listOfNotNull(artworkUrl) }
+    return PlayerTrack(
+        id = mediaId,
+        title = mediaMetadata.title?.toString().orEmpty(),
+        artist = mediaMetadata.artist?.toString().orEmpty(),
+        artworkUrl = artworkUrl,
+        streamUrl = localConfiguration?.uri?.toString().orEmpty(),
+        durationMs = durationMs,
+        lyrics = extras?.getString(MEDIA_METADATA_LYRICS_KEY),
+        description = extras?.getString(MEDIA_METADATA_DESCRIPTION_KEY),
+        artistRef = extras?.let {
+            val artistId = it.getString(MEDIA_METADATA_ARTIST_ID_KEY).orEmpty()
+            val platform = it.getString(MEDIA_METADATA_ARTIST_PLATFORM_KEY)
+                ?.let { raw -> runCatching { MusicPlatform.valueOf(raw) }.getOrNull() }
+            if (artistId.isNotBlank() && platform != null) {
+                MusicArtistRef(artistId, platform, mediaMetadata.artist?.toString().orEmpty())
+            } else {
+                null
+            }
+        },
+        artworkThumbnailUrls = artworkThumbnailUrls,
+    )
+}

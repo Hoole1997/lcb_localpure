@@ -11,4 +11,5 @@
   <string name="settings_link_unavailable">此链接尚未配置</string>
   <string name="settings_link_open_failed">没有可用于打开此链接的浏览器</string>
   <string name="action_back">返回</string>
+  <string name="settings_language_system_default">跟随系统</string>
 </resources>

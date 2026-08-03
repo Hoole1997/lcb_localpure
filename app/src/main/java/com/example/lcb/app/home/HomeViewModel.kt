@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.lcb.app.R
+import com.example.lcb.app.ui.AppLoadError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -14,9 +15,9 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
     // 这里只保存 MediaSession 的 UI 投影，不再在首页自行切换真假播放状态。
     private val playback = MutableStateFlow<PlaybackSnapshot?>(null)
     private val loading = MutableStateFlow(true)
-    private val error = MutableStateFlow<String?>(null)
+    private val loadError = MutableStateFlow<AppLoadError?>(null)
 
-    val uiState = combine(repository.content, playback, loading, error) { content, snapshot, isLoading, errorMessage ->
+    val uiState = combine(repository.content, playback, loading, loadError) { content, snapshot, isLoading, error ->
         val renderedContent = content.withPlayback(
             activeTrackId = snapshot?.track?.id,
             isActivelyPlaying = snapshot?.isActivelyPlaying == true,
@@ -52,7 +53,7 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
             },
             miniPlayer = snapshot?.let { MiniPlayerUi(it.track, it.isPlaying) },
             isLoading = isLoading,
-            errorMessage = errorMessage,
+            loadError = error,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
@@ -63,9 +64,9 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
     fun refresh() {
         viewModelScope.launch {
             loading.value = true
-            error.value = null
+            loadError.value = null
             runCatching { repository.refresh() }
-                .onFailure { error.value = it.message ?: "Unable to load music" }
+                .onFailure { loadError.value = AppLoadError.HOME }
             loading.value = false
         }
     }

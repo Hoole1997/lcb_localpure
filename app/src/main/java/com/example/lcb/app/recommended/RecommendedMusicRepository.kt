@@ -39,20 +39,24 @@ class MusicSdkRecommendedMusicRepository(
         return RecommendedMusicPage(tracks, nextOffset)
     }
 
-    private fun toUi(track: MusicTrack) = RecommendedTrackUi(
-        track = PlayerTrack(
-            id = "${track.platform}:${track.id}",
-            title = track.title,
-            artist = track.artistName,
-            artworkUrl = track.artwork?.preferredUrl ?: track.artworkUrl,
-            streamUrl = track.streamUrl,
-            durationMs = track.durationMs,
-            lyrics = track.lyrics,
-            description = track.description,
-            artistRef = track.artist,
-        ),
-        artworkThumbnailUrls = track.artwork?.thumbnailCandidates().orEmpty()
-            .ifEmpty { listOfNotNull(track.artworkUrl) },
-        artworkFallbackRes = R.drawable.home_cover_recommended_3,
-    )
+    private fun toUi(track: MusicTrack): RecommendedTrackUi {
+        val artworkThumbnailUrls = track.artwork?.thumbnailCandidates().orEmpty()
+            .ifEmpty { listOfNotNull(track.artworkUrl) }
+        return RecommendedTrackUi(
+            track = PlayerTrack(
+                id = "${track.platform}:${track.id}",
+                title = track.title,
+                artist = track.artistName,
+                artworkUrl = track.artwork?.preferredUrl ?: track.artworkUrl,
+                streamUrl = track.streamUrl,
+                durationMs = track.durationMs,
+                lyrics = track.lyrics,
+                description = track.description,
+                artistRef = track.artist,
+                artworkThumbnailUrls = artworkThumbnailUrls,
+            ),
+            artworkThumbnailUrls = artworkThumbnailUrls,
+            artworkFallbackRes = R.drawable.home_cover_recommended_3,
+        )
+    }
 }

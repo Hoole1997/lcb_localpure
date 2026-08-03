@@ -7,6 +7,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.ui.AppLoadError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -65,13 +66,13 @@ class SearchViewModel internal constructor(
         val normalizedQuery = snapshot.query.trim()
         if (
             normalizedQuery.isEmpty() || snapshot.isInitialLoading || snapshot.isLoadingMore ||
-            !snapshot.hasMore || snapshot.loadMoreErrorMessage != null
+            !snapshot.hasMore || snapshot.loadMoreError != null
         ) {
             return
         }
         val offset = nextOffset ?: return
         loadMoreJob = viewModelScope.launch {
-            mutableState.update { it.copy(isLoadingMore = true, loadMoreErrorMessage = null) }
+            mutableState.update { it.copy(isLoadingMore = true, loadMoreError = null) }
             try {
                 val page = repository.search(normalizedQuery, offset, PAGE_SIZE)
                 if (mutableState.value.query.trim() != normalizedQuery) return@launch
@@ -88,12 +89,12 @@ class SearchViewModel internal constructor(
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
-            } catch (failure: Throwable) {
+            } catch (_: Throwable) {
                 if (mutableState.value.query.trim() == normalizedQuery) {
                     mutableState.update {
                         it.copy(
                             isLoadingMore = false,
-                            loadMoreErrorMessage = failure.userFacingMessage(),
+                            loadMoreError = AppLoadError.SEARCH_MORE,
                         )
                     }
                 }
@@ -105,12 +106,12 @@ class SearchViewModel internal constructor(
         val snapshot = mutableState.value
         val normalizedQuery = snapshot.query.trim()
         if (normalizedQuery.isEmpty()) return
-        if (snapshot.loadMoreErrorMessage != null) {
-            mutableState.update { it.copy(loadMoreErrorMessage = null) }
+        if (snapshot.loadMoreError != null) {
+            mutableState.update { it.copy(loadMoreError = null) }
             loadNextPage()
             return
         }
-        if (snapshot.errorMessage != null && !snapshot.isInitialLoading) {
+        if (snapshot.initialLoadError != null && !snapshot.isInitialLoading) {
             retryJob?.cancel()
             retryJob = viewModelScope.launch { loadFirstPage(normalizedQuery) }
         }
@@ -134,8 +135,8 @@ class SearchViewModel internal constructor(
                 isLoadingMore = false,
                 hasMore = false,
                 hasSearched = true,
-                errorMessage = null,
-                loadMoreErrorMessage = null,
+                initialLoadError = null,
+                loadMoreError = null,
             )
         }
         try {
@@ -149,19 +150,19 @@ class SearchViewModel internal constructor(
                     tracks = page.tracks.distinctBy(SearchTrackUi::id).withPlayback(),
                     isInitialLoading = false,
                     hasMore = page.nextOffset != null,
-                    errorMessage = null,
+                    initialLoadError = null,
                 )
             }
         } catch (cancellation: CancellationException) {
             throw cancellation
-        } catch (failure: Throwable) {
+        } catch (_: Throwable) {
             if (mutableState.value.query.trim() == normalizedQuery) {
                 mutableState.update {
                     it.copy(
                         tracks = emptyList(),
                         isInitialLoading = false,
                         hasMore = false,
-                        errorMessage = failure.userFacingMessage(),
+                        initialLoadError = AppLoadError.SEARCH,
                     )
                 }
             }
@@ -176,10 +177,6 @@ class SearchViewModel internal constructor(
     private fun List<SearchTrackUi>.withPlayback() = map { track ->
         track.copy(isPlaying = isActiveTrackPlaying && track.id == activeTrackId)
     }
-
-    private fun Throwable.userFacingMessage(): String = message
-        ?.takeIf(String::isNotBlank)
-        ?: "Unable to search music"
 
     class Factory(private val repository: SearchRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

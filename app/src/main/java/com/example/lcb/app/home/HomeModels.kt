@@ -2,6 +2,7 @@ package com.example.lcb.app.home
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import com.example.lcb.app.ui.AppLoadError
 import com.example.lcb.music.model.MusicArtistRef
 
 /** 首页展示模型与网络 DTO 解耦，避免 Adapter 感知具体媒体平台。 */
@@ -63,5 +64,5 @@ data class HomeUiState(
     val items: List<HomeListItem> = emptyList(),
     val miniPlayer: MiniPlayerUi? = null,
     val isLoading: Boolean = true,
-    val errorMessage: String? = null,
+    val loadError: AppLoadError? = null,
 )

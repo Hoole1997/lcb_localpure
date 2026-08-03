@@ -11,4 +11,5 @@
   <string name="settings_link_unavailable">이 링크는 아직 설정되지 않았습니다</string>
   <string name="settings_link_open_failed">이 링크를 열 수 있는 브라우저가 없습니다</string>
   <string name="action_back">뒤로</string>
+  <string name="settings_language_system_default">시스템 언어 따르기</string>
 </resources>

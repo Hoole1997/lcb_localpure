@@ -12,6 +12,12 @@
   <string name="search_cancel">キャンセル</string>
   <string name="search_retry">再試行</string>
   <string name="search_empty">音楽が見つかりません</string>
+  <string name="load_error_home">音楽を読み込めませんでした。接続を確認して、もう一度お試しください。</string>
+  <string name="load_error_recommended">おすすめの音楽を読み込めませんでした。接続を確認して、もう一度お試しください。</string>
+  <string name="load_error_recommended_more">おすすめをさらに読み込めませんでした。タップして再試行してください。</string>
+  <string name="load_error_search">音楽を検索できませんでした。接続を確認して、もう一度お試しください。</string>
+  <string name="load_error_search_more">検索結果をさらに読み込めませんでした。タップして再試行してください。</string>
+  <string name="load_error_local_music">ローカル音楽を読み込めませんでした。もう一度お試しください。</string>
   <string name="search_more_track">その他：%1$s</string>
   <string name="recommended_title">おすすめの音楽</string>
   <string name="recommended_play_all">すべて再生</string>
@@ -20,7 +26,7 @@
   <string name="recommended_finish_selection">選択を完了</string>
   <string name="recommended_select_track">曲を選択</string>
   <string name="recommended_empty">おすすめの音楽はありません</string>
-  <string name="track_action_song_info">曲の情報</string>
+  <string name="track_action_song_info">アーティスト情報</string>
   <string name="track_action_artist_unavailable">アーティスト情報を利用できません</string>
   <string name="track_action_add_to_playlist">プレイリストに追加</string>
   <string name="track_action_download">ダウンロード</string>

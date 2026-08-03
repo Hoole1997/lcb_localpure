@@ -12,6 +12,12 @@
   <string name="search_cancel">Hủy</string>
   <string name="search_retry">Thử lại</string>
   <string name="search_empty">Không tìm thấy nhạc</string>
+  <string name="load_error_home">Không thể tải nhạc. Hãy kiểm tra kết nối rồi thử lại.</string>
+  <string name="load_error_recommended">Không thể tải nhạc đề xuất. Hãy kiểm tra kết nối rồi thử lại.</string>
+  <string name="load_error_recommended_more">Không thể tải thêm nhạc đề xuất. Nhấn để thử lại.</string>
+  <string name="load_error_search">Không thể tìm kiếm nhạc. Hãy kiểm tra kết nối rồi thử lại.</string>
+  <string name="load_error_search_more">Không thể tải thêm kết quả tìm kiếm. Nhấn để thử lại.</string>
+  <string name="load_error_local_music">Không thể đọc nhạc trên thiết bị. Hãy thử lại.</string>
   <string name="search_more_track">Thêm: %1$s</string>
   <string name="recommended_title">Nhạc đề xuất</string>
   <string name="recommended_play_all">Phát tất cả</string>
@@ -20,7 +26,7 @@
   <string name="recommended_finish_selection">Hoàn tất chọn bài hát</string>
   <string name="recommended_select_track">Chọn bài hát</string>
   <string name="recommended_empty">Không có nhạc đề xuất</string>
-  <string name="track_action_song_info">Thông tin bài hát</string>
+  <string name="track_action_song_info">Thông tin nghệ sĩ</string>
   <string name="track_action_artist_unavailable">Không có thông tin nghệ sĩ</string>
   <string name="track_action_add_to_playlist">Thêm vào danh sách phát</string>
   <string name="track_action_download">Tải xuống</string>

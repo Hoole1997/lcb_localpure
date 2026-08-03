@@ -12,6 +12,12 @@
   <string name="search_cancel">Abbrechen</string>
   <string name="search_retry">Erneut versuchen</string>
   <string name="search_empty">Keine Musik gefunden</string>
+  <string name="load_error_home">Musik konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.</string>
+  <string name="load_error_recommended">Empfohlene Musik konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.</string>
+  <string name="load_error_recommended_more">Weitere Empfehlungen konnten nicht geladen werden. Tippe, um es erneut zu versuchen.</string>
+  <string name="load_error_search">Die Musiksuche ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.</string>
+  <string name="load_error_search_more">Weitere Suchergebnisse konnten nicht geladen werden. Tippe, um es erneut zu versuchen.</string>
+  <string name="load_error_local_music">Lokale Musik konnte nicht gelesen werden. Versuche es erneut.</string>
   <string name="search_more_track">Mehr: %1$s</string>
   <string name="recommended_title">Empfohlene Musik</string>
   <string name="recommended_play_all">Alle wiedergeben</string>
@@ -20,7 +26,7 @@
   <string name="recommended_finish_selection">Auswahl beenden</string>
   <string name="recommended_select_track">Titel auswählen</string>
   <string name="recommended_empty">Keine empfohlene Musik verfügbar</string>
-  <string name="track_action_song_info">Titelinformationen</string>
+  <string name="track_action_song_info">Künstlerinfo</string>
   <string name="track_action_artist_unavailable">Künstlerinformationen sind nicht verfügbar</string>
   <string name="track_action_add_to_playlist">Zur Playlist hinzufügen</string>
   <string name="track_action_download">Herunterladen</string>

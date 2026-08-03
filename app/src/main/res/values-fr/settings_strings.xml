@@ -11,4 +11,5 @@
   <string name="settings_link_unavailable">Ce lien n’est pas encore configuré</string>
   <string name="settings_link_open_failed">Aucun navigateur ne peut ouvrir ce lien</string>
   <string name="action_back">Retour</string>
+  <string name="settings_language_system_default">Suivre la langue du système</string>
 </resources>

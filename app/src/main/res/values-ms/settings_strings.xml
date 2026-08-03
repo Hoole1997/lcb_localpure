@@ -11,4 +11,5 @@
   <string name="settings_link_unavailable">Pautan ini belum dikonfigurasikan</string>
   <string name="settings_link_open_failed">Tiada pelayar tersedia untuk membuka pautan ini</string>
   <string name="action_back">Kembali</string>
+  <string name="settings_language_system_default">Ikut bahasa sistem</string>
 </resources>

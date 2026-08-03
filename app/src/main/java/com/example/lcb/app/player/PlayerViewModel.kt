@@ -19,12 +19,37 @@ data class PlayerTrack(
     val description: String? = null,
     /** 稳定歌手引用用于从任意播放入口打开歌手页，旧的本地数据允许为空。 */
     val artistRef: MusicArtistRef? = null,
+    /** 列表已验证过的小图与镜像候选链，随播放队列传递给各页面的 Mini Player。 */
+    val artworkThumbnailUrls: List<String> = emptyList(),
 )
 
 internal const val MEDIA_METADATA_LYRICS_KEY = "com.example.lcb.metadata.LYRICS"
 internal const val MEDIA_METADATA_DESCRIPTION_KEY = "com.example.lcb.metadata.DESCRIPTION"
 internal const val MEDIA_METADATA_ARTIST_ID_KEY = "com.example.lcb.metadata.ARTIST_ID"
 internal const val MEDIA_METADATA_ARTIST_PLATFORM_KEY = "com.example.lcb.metadata.ARTIST_PLATFORM"
+internal const val MEDIA_METADATA_ARTWORK_THUMBNAILS_KEY = "com.example.lcb.metadata.ARTWORK_THUMBNAILS"
+
+/** 小图优先、原图兜底；限制候选数量与长度，避免大队列放大 Intent/MediaSession 数据。 */
+internal fun PlayerTrack.artworkCandidates(): List<String> {
+    val thumbnails = artworkThumbnailUrls.asSequence()
+        .map(String::trim)
+        .filter { it.isNotEmpty() && it.length <= MAX_ARTWORK_URL_LENGTH }
+        .distinct()
+        .toList()
+    val original = artworkUrl
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() && it.length <= MAX_ARTWORK_URL_LENGTH }
+
+    // 为原图保留最后一个兜底位置；若它已经在小图链中，则直接复用该缓存键。
+    return if (original == null || original in thumbnails) {
+        thumbnails.take(MAX_ARTWORK_CANDIDATE_COUNT)
+    } else {
+        thumbnails.take(MAX_ARTWORK_CANDIDATE_COUNT - 1) + original
+    }
+}
+
+private const val MAX_ARTWORK_CANDIDATE_COUNT = 4
+private const val MAX_ARTWORK_URL_LENGTH = 2_048
 
 enum class PlaybackMode { SEQUENTIAL, REPEAT_ONE, SHUFFLE }
 

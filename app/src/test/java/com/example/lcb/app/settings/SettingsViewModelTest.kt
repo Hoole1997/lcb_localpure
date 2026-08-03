@@ -25,7 +25,7 @@ class SettingsViewModelTest {
         val result = viewModel.applyLanguage(AppLanguage.JAPANESE.languageTag)
 
         assertEquals(LanguageApplyResult.FAILED, result)
-        assertEquals(AppLanguage.ENGLISH, viewModel.state.value.currentLanguage)
+        assertEquals(AppLanguage.SYSTEM_DEFAULT, viewModel.state.value.currentLanguage)
     }
 
     @Test
@@ -49,13 +49,32 @@ class SettingsViewModelTest {
         assertNull(AppLanguage.fromTag("zh-Hant-HK"))
     }
 
+    @Test
+    fun `empty tag selects follow system as the default mode`() {
+        val repository = FakeRepository()
+        val viewModel = SettingsViewModel(repository)
+
+        val result = viewModel.applyLanguage(AppLanguage.SYSTEM_DEFAULT.languageTag)
+
+        assertEquals(LanguageApplyResult.APPLIED, result)
+        assertEquals(AppLanguage.SYSTEM_DEFAULT, viewModel.state.value.currentLanguage)
+        assertEquals(AppLanguage.SYSTEM_DEFAULT, repository.current)
+    }
+
+    @Test
+    fun `language analytics values are stable and system is never blank`() {
+        assertEquals("system", AppLanguage.SYSTEM_DEFAULT.analyticsValue)
+        assertEquals("en", AppLanguage.ENGLISH.analyticsValue)
+        assertEquals("zh-cn", AppLanguage.CHINESE_SIMPLIFIED.analyticsValue)
+    }
+
     private class FakeRepository(
         private val result: LanguageApplyResult = LanguageApplyResult.APPLIED,
     ) : AppSettingsRepository {
         override val supportedLanguages = AppLanguage.entries
         override val privacyPolicyUrl: String? = "https://example.com/privacy"
         override val termsOfServiceUrl: String? = "https://example.com/terms"
-        var current: AppLanguage = AppLanguage.ENGLISH
+        var current: AppLanguage = AppLanguage.SYSTEM_DEFAULT
 
         override fun currentLanguage() = current
 

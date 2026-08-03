@@ -12,6 +12,12 @@
   <string name="search_cancel">取消</string>
   <string name="search_retry">重试</string>
   <string name="search_empty">未找到音乐</string>
+  <string name="load_error_home">无法加载音乐，请检查网络后重试。</string>
+  <string name="load_error_recommended">无法加载推荐音乐，请检查网络后重试。</string>
+  <string name="load_error_recommended_more">无法加载更多推荐音乐，点击重试。</string>
+  <string name="load_error_search">无法搜索音乐，请检查网络后重试。</string>
+  <string name="load_error_search_more">无法加载更多搜索结果，点击重试。</string>
+  <string name="load_error_local_music">无法读取本地音乐，请重试。</string>
   <string name="search_more_track">更多：%1$s</string>
   <string name="recommended_title">推荐音乐</string>
   <string name="recommended_play_all">播放全部</string>
@@ -20,7 +26,7 @@
   <string name="recommended_finish_selection">完成选择</string>
   <string name="recommended_select_track">选择歌曲</string>
   <string name="recommended_empty">暂无推荐音乐</string>
-  <string name="track_action_song_info">歌曲信息</string>
+  <string name="track_action_song_info">歌手信息</string>
   <string name="track_action_artist_unavailable">暂无歌手信息</string>
   <string name="track_action_add_to_playlist">添加到歌单</string>
   <string name="track_action_download">下载</string>

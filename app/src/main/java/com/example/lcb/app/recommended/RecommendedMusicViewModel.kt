@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.player.artworkCandidates
+import com.example.lcb.app.ui.AppLoadError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,8 +39,8 @@ class RecommendedMusicViewModel(
                     isInitialLoading = true,
                     isLoadingMore = false,
                     hasMore = false,
-                    errorMessage = null,
-                    loadMoreErrorMessage = null,
+                    initialLoadError = null,
+                    loadMoreError = null,
                     isSelectionMode = false,
                 ).withPlayback(playback)
             }
@@ -54,11 +56,11 @@ class RecommendedMusicViewModel(
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
-            } catch (failure: Throwable) {
+            } catch (_: Throwable) {
                 mutableState.update {
                     it.copy(
                         isInitialLoading = false,
-                        errorMessage = failure.userFacingMessage(),
+                        initialLoadError = AppLoadError.RECOMMENDED,
                     ).withPlayback(playback)
                 }
             }
@@ -70,12 +72,12 @@ class RecommendedMusicViewModel(
         val offset = nextOffset ?: return
         if (
             snapshot.isInitialLoading || snapshot.isLoadingMore || !snapshot.hasMore ||
-            snapshot.loadMoreErrorMessage != null
+            snapshot.loadMoreError != null
         ) {
             return
         }
         loadMoreJob = viewModelScope.launch {
-            mutableState.update { it.copy(isLoadingMore = true, loadMoreErrorMessage = null) }
+            mutableState.update { it.copy(isLoadingMore = true, loadMoreError = null) }
             try {
                 val page = repository.load(offset, PAGE_SIZE)
                 nextOffset = page.nextOffset
@@ -88,11 +90,11 @@ class RecommendedMusicViewModel(
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
-            } catch (failure: Throwable) {
+            } catch (_: Throwable) {
                 mutableState.update {
                     it.copy(
                         isLoadingMore = false,
-                        loadMoreErrorMessage = failure.userFacingMessage(),
+                        loadMoreError = AppLoadError.RECOMMENDED_MORE,
                     )
                 }
             }
@@ -101,9 +103,9 @@ class RecommendedMusicViewModel(
 
     fun retry() {
         when {
-            mutableState.value.errorMessage != null -> refresh()
-            mutableState.value.loadMoreErrorMessage != null -> {
-                mutableState.update { it.copy(loadMoreErrorMessage = null) }
+            mutableState.value.initialLoadError != null -> refresh()
+            mutableState.value.loadMoreError != null -> {
+                mutableState.update { it.copy(loadMoreError = null) }
                 loadNextPage()
             }
         }
@@ -158,7 +160,7 @@ class RecommendedMusicViewModel(
             RecommendedMiniPlayerUi(
                 track = current.track,
                 artworkThumbnailUrls = listedTrack?.artworkThumbnailUrls
-                    ?: listOfNotNull(current.track.artworkUrl),
+                    ?: current.track.artworkCandidates(),
                 artworkFallbackRes = listedTrack?.artworkFallbackRes
                     ?: com.example.lcb.app.R.drawable.home_cover_recommended_3,
                 isPlaying = current.isPlaying,
@@ -166,10 +168,6 @@ class RecommendedMusicViewModel(
         }
         return copy(tracks = projectedTracks, miniPlayer = mini)
     }
-
-    private fun Throwable.userFacingMessage(): String = message
-        ?.takeIf(String::isNotBlank)
-        ?: "Unable to load recommended music"
 
     private data class PlaybackSnapshot(
         val track: PlayerTrack,

@@ -14,12 +14,14 @@ import com.example.lcb.app.LauncherSdkGateway
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.corekit.core.controller.AdSlotSwitchController
 
 fun FragmentActivity.loadNative(
     container: ViewGroup,
     styleType: NativeAdStyleType = NativeAdStyleType.STANDARD,
     condition: () -> Boolean = { true },
-    call: (Boolean) -> Unit = {}
+    call: (Boolean) -> Unit = {},
+    position: String? = null,
 ) {
     lifecycleScope.launch {
         try {
@@ -32,7 +34,8 @@ fun FragmentActivity.loadNative(
             val success = AdShowExt.showNativeAdInContainer(
                 context = container.context,
                 container = container,
-                styleType = styleType
+                styleType = styleType,
+                position = position,
             )
 
             // 广告 SDK 返回时 Activity 可能已经退出；此时不再操作旧页面 View。
@@ -57,7 +60,8 @@ fun FragmentActivity.loadNative(
 
 fun FragmentActivity.loadInterstitial(
     condition: () -> Boolean = { true },
-    call: (Boolean) -> Unit
+    call: (Boolean) -> Unit,
+    position: String? = null,
 ) {
     lifecycleScope.launch {
         try {
@@ -66,7 +70,7 @@ fun FragmentActivity.loadInterstitial(
                 return@launch
             }
             LauncherSdkGateway.beforeShowAd(this@loadInterstitial)
-            when (AdShowExt.showInterstitialAd(this@loadInterstitial)) {
+            when (AdShowExt.showInterstitialAd(this@loadInterstitial, position = position)) {
                 is AdResult.Success -> call.invoke(true)
                 is AdResult.Failure -> call.invoke(false)
             }
@@ -79,10 +83,17 @@ fun FragmentActivity.loadInterstitial(
     }
 }
 
-/** 插屏展示场景用于后续单独配置频控，不让业务页面感知广告 SDK。 */
-enum class InterstitialAdPlacement {
-    CONTENT_PAGE,
-    PLAYBACK_START,
+/**
+ * 插屏来源只携带对应的业务开关 key；广告 SDK 的 position 仍由目标 Activity 单独传入。
+ */
+enum class InterstitialAdPlacement(internal val switchKey: String) {
+    HOME_RECOMMENDED_MORE_ENTRY(BusinessAdSwitchKey.HOME_RECOMMENDED_MORE_ENTRY_INTERSTITIAL),
+    HOME_LOCAL_PLAYLISTS_ENTRY(BusinessAdSwitchKey.HOME_LOCAL_PLAYLISTS_ENTRY_INTERSTITIAL),
+    HOME_FAVORITES_ENTRY(BusinessAdSwitchKey.HOME_FAVORITES_ENTRY_INTERSTITIAL),
+    HOME_PLAYLIST_ENTRY(BusinessAdSwitchKey.HOME_PLAYLIST_ENTRY_INTERSTITIAL),
+    ARTIST_LIST_NAME_ENTRY(BusinessAdSwitchKey.ARTIST_LIST_NAME_ENTRY_INTERSTITIAL),
+    PLAYER_ARTIST_NAME_ENTRY(BusinessAdSwitchKey.PLAYER_ARTIST_NAME_ENTRY_INTERSTITIAL),
+    SONG_INFO_ARTIST_ENTRY(BusinessAdSwitchKey.SONG_INFO_ARTIST_ENTRY_INTERSTITIAL),
 }
 
 /** 在创建目标页 Intent 时标记，目标页会在完成跳转和首帧展示后再请求插屏。 */
@@ -98,6 +109,7 @@ fun FragmentActivity.loadRequestedPostNavigationInterstitial(
     savedInstanceState: Bundle?,
     condition: () -> Boolean = { true },
     call: (Boolean) -> Unit = {},
+    position: String? = null,
 ) {
     if (savedInstanceState != null) return
     val placement = intent.getStringExtra(EXTRA_INTERSTITIAL_PLACEMENT)
@@ -109,9 +121,15 @@ fun FragmentActivity.loadRequestedPostNavigationInterstitial(
         // 让目标页先完成进入动画与首帧绘制，广告关闭后用户能直接继续当前任务。
         delay(POST_NAVIGATION_AD_DELAY_MS)
         if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@launch
+        // 业务开关和广告 position 相互独立；关闭时不请求广告，也不消耗全局频控。
+        if (!AdSlotSwitchController.isEnabled(placement.switchKey)) {
+            call(false)
+            return@launch
+        }
         loadInterstitial(
             condition = { condition() && BusinessAdPolicy.tryAcquireInterstitial(placement) },
             call = call,
+            position = position,
         )
     }
 }

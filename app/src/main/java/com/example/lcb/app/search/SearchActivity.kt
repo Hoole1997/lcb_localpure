@@ -27,15 +27,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lcb.app.MusicDependencies
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.artist.ArtistActivity
 import com.example.lcb.app.databinding.ActivitySearchBinding
 import com.example.lcb.app.player.PlaybackService
 import com.example.lcb.app.player.PlayerActivity
 import com.example.lcb.app.trackactions.TrackActionUiModel
 import com.example.lcb.app.trackactions.TrackActionsController
+import com.example.lcb.app.utils.BusinessAdSwitchKey
+import com.example.lcb.app.utils.InterstitialAdPlacement
 import com.example.lcb.app.utils.loadNative
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.launch
+import net.corekit.core.controller.AdSlotSwitchController
 
 class SearchActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySearchBinding
@@ -46,21 +50,27 @@ class SearchActivity : AppCompatActivity() {
     private val resultAdapter by lazy(LazyThreadSafetyMode.NONE) {
         SearchResultAdapter(
             onTrackClick = ::openPlayer,
-            onArtistClick = { track -> track.artistRef?.let { ArtistActivity.open(this, it) } },
+            onArtistClick = ::openArtist,
             onTrackMore = ::showTrackActions,
             onRetryLoadMore = viewModel::retry,
         )
     }
-    private val trackActions by lazy(LazyThreadSafetyMode.NONE) { TrackActionsController(this) }
+    private val trackActions by lazy(LazyThreadSafetyMode.NONE) {
+        TrackActionsController(this, MusicAnalytics.Surface.SEARCH)
+    }
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
     private var nativeAdRequested = false
+    private var lastReportedSearchQuery: String? = null
+    private var lastReportedSearchOutcome: Pair<String, MusicAnalytics.SearchAction>? = null
+    private var skipRestoredAnalyticsSnapshot = false
     private val playerListener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) = syncPlayback(player)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        skipRestoredAnalyticsSnapshot = savedInstanceState != null
         enableEdgeToEdge()
         binding = ActivitySearchBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -73,6 +83,7 @@ class SearchActivity : AppCompatActivity() {
         configureSearchInput(savedInstanceState)
         configureResults()
         observeState()
+        if (savedInstanceState == null) MusicAnalytics.screenView(MusicAnalytics.Screen.SEARCH)
     }
 
     override fun onStart() {
@@ -119,7 +130,13 @@ class SearchActivity : AppCompatActivity() {
             binding.searchInput.requestFocus()
         }
         binding.cancel.setOnClickListener { finish() }
-        binding.retry.setOnClickListener { viewModel.retry() }
+        binding.retry.setOnClickListener {
+            MusicAnalytics.search(
+                MusicAnalytics.SearchAction.RETRY,
+                viewModel.state.value.query.trim().length,
+            )
+            viewModel.retry()
+        }
 
         if (savedInstanceState == null) {
             binding.searchInput.requestFocus()
@@ -169,28 +186,81 @@ class SearchActivity : AppCompatActivity() {
         binding.clear.isVisible = state.query.isNotEmpty()
         resultAdapter.submitState(state)
 
-        val showInitialError = state.errorMessage != null && state.tracks.isEmpty() && !state.isInitialLoading
+        val showInitialError = state.initialLoadError != null && state.tracks.isEmpty() && !state.isInitialLoading
         val showEmpty = state.hasSearched && state.query.isNotBlank() && state.tracks.isEmpty() &&
-            !state.isInitialLoading && state.errorMessage == null
+            !state.isInitialLoading && state.initialLoadError == null
         binding.stateContainer.isVisible = showInitialError || showEmpty
-        binding.stateMessage.text = when {
-            showInitialError -> state.errorMessage
-            showEmpty -> getString(R.string.search_empty)
-            else -> ""
+        when {
+            showInitialError -> binding.stateMessage.setText(requireNotNull(state.initialLoadError).messageRes)
+            showEmpty -> binding.stateMessage.setText(R.string.search_empty)
+            else -> binding.stateMessage.text = ""
         }
         binding.retry.isVisible = showInitialError
         if (state.tracks.isNotEmpty() && !nativeAdRequested) {
             nativeAdRequested = true
             // 用户获得搜索结果后再加载，避免刚进入输入页就用广告挤压可用空间。
-            loadNative(binding.adContainer)
+            if (AdSlotSwitchController.isEnabled(BusinessAdSwitchKey.SEARCH_RESULT_BOTTOM_NATIVE)) {
+                loadNative(binding.adContainer, position = TAG)
+            }
         }
+        reportSearchState(state)
+    }
+
+    /** 搜索词只在内存中用于防重，上报时仅发送长度、结果数量和状态。 */
+    private fun reportSearchState(state: SearchUiState) {
+        val normalizedQuery = state.query.trim()
+        if (!state.hasSearched || normalizedQuery.isEmpty()) {
+            skipRestoredAnalyticsSnapshot = false
+            return
+        }
+        val outcome = when {
+            state.isInitialLoading -> null
+            state.initialLoadError != null -> MusicAnalytics.SearchAction.FAILURE
+            state.tracks.isEmpty() -> MusicAnalytics.SearchAction.EMPTY
+            else -> MusicAnalytics.SearchAction.SUCCESS
+        }
+        if (skipRestoredAnalyticsSnapshot) {
+            lastReportedSearchQuery = normalizedQuery
+            outcome?.let { lastReportedSearchOutcome = normalizedQuery to it }
+            skipRestoredAnalyticsSnapshot = false
+            return
+        }
+        if (lastReportedSearchQuery != normalizedQuery) {
+            lastReportedSearchQuery = normalizedQuery
+            lastReportedSearchOutcome = null
+            MusicAnalytics.search(MusicAnalytics.SearchAction.STARTED, normalizedQuery.length)
+        }
+        val outcomeKey = outcome?.let { normalizedQuery to it } ?: return
+        if (lastReportedSearchOutcome == outcomeKey) return
+        lastReportedSearchOutcome = outcomeKey
+        MusicAnalytics.search(outcome, normalizedQuery.length, state.tracks.size)
     }
 
     private fun openPlayer(track: SearchTrackUi) {
         val queue = viewModel.playerQueue()
         if (queue.isEmpty()) return
+        MusicAnalytics.trackSelected(
+            MusicAnalytics.Surface.SEARCH,
+            track.artistRef?.platform,
+            queue.size,
+        )
         viewModel.updatePlayback(track.id, true)
         PlayerActivity.openQueue(this, queue, track.id)
+    }
+
+    private fun openArtist(track: SearchTrackUi) {
+        track.artistRef?.let { artist ->
+            MusicAnalytics.trackAction(
+                MusicAnalytics.TrackAction.OPEN_ARTIST,
+                MusicAnalytics.Surface.SEARCH,
+                artist.platform,
+            )
+            ArtistActivity.open(
+                this,
+                artist,
+                InterstitialAdPlacement.ARTIST_LIST_NAME_ENTRY,
+            )
+        }
     }
 
     private fun showTrackActions(track: SearchTrackUi) {
@@ -247,7 +317,7 @@ class SearchActivity : AppCompatActivity() {
         private const val MAX_QUERY_LENGTH = 100
         private const val RESULT_PREFETCH_COUNT = 8
         private const val LOAD_MORE_DISTANCE = 5
-
+        private const val TAG = "SearchActivity"
         fun open(context: Context) {
             context.startActivity(Intent(context, SearchActivity::class.java))
         }

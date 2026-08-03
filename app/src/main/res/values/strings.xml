@@ -23,6 +23,12 @@
     <string name="search_cancel">Cancel</string>
     <string name="search_retry">Retry</string>
     <string name="search_empty">No music found</string>
+    <string name="load_error_home">Unable to load music. Check your connection and try again.</string>
+    <string name="load_error_recommended">Unable to load recommended music. Check your connection and try again.</string>
+    <string name="load_error_recommended_more">Unable to load more recommended music. Tap to retry.</string>
+    <string name="load_error_search">Unable to search for music. Check your connection and try again.</string>
+    <string name="load_error_search_more">Unable to load more search results. Tap to retry.</string>
+    <string name="load_error_local_music">Unable to read your local music. Try again.</string>
     <string name="search_more_track">More: %1$s</string>
     <string name="recommended_title">Recommended Musics</string>
     <string name="recommended_play_all">Play all</string>
@@ -31,7 +37,7 @@
     <string name="recommended_finish_selection">Finish selecting songs</string>
     <string name="recommended_select_track">Select song</string>
     <string name="recommended_empty">No recommended music available</string>
-    <string name="track_action_song_info">Song Info</string>
+    <string name="track_action_song_info">Artist Info</string>
     <string name="track_action_artist_unavailable">Artist information is unavailable</string>
     <string name="track_action_add_to_playlist">Add to playlist</string>
     <string name="track_action_download">Download</string>
@@ -169,6 +175,7 @@
     <string name="settings_link_unavailable">This link has not been configured yet</string>
     <string name="settings_link_open_failed">No browser is available to open this link</string>
     <string name="action_back">Back</string>
+    <string name="settings_language_system_default">Follow system</string>
     <!-- Native language names deliberately do not follow the current app locale. -->
     <string name="settings_language_english" translatable="false">English</string>
     <string name="settings_language_chinese_simplified" translatable="false">简体中文</string>

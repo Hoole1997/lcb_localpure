@@ -27,14 +27,13 @@ import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.lcb.app.R
 import com.example.lcb.app.MusicLibraryDependencies
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.example.lcb.app.artist.ArtistActivity
 import com.example.lcb.app.databinding.ActivityPlayerBinding
 import com.example.lcb.app.home.HomeTrackUi
 import com.example.lcb.app.library.dialog.PlaylistDialogsController
 import com.example.lcb.app.library.toLibraryTrack
 import com.example.lcb.app.utils.InterstitialAdPlacement
-import com.example.lcb.app.utils.loadRequestedPostNavigationInterstitial
-import com.example.lcb.app.utils.requestPostNavigationInterstitial
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.gson.Gson
 import kotlinx.coroutines.Job
@@ -70,6 +69,7 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
         override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+            // 错误埋点由 PlaybackService 在自动恢复前统一上报，Activity 只负责前台提示，避免重复事件。
             Toast.makeText(this@PlayerActivity, error.localizedMessage, Toast.LENGTH_SHORT).show()
         }
     }
@@ -85,7 +85,7 @@ class PlayerActivity : AppCompatActivity() {
         applyInsets()
         configureActions()
         observeUiState()
-        loadRequestedPostNavigationInterstitial(savedInstanceState)
+        if (savedInstanceState == null) MusicAnalytics.screenView(MusicAnalytics.Screen.PLAYER)
     }
 
     override fun onStart() {
@@ -200,34 +200,118 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun configureActions() {
-        binding.artwork.onTextVisibilityChanged = viewModel::setTrackTextVisible
+        binding.artwork.onTextVisibilityChanged = { isVisible ->
+            MusicAnalytics.trackAction(
+                action = if (isVisible) {
+                    MusicAnalytics.TrackAction.SHOW_DETAILS
+                } else {
+                    MusicAnalytics.TrackAction.HIDE_DETAILS
+                },
+                surface = MusicAnalytics.Surface.PLAYER,
+                platform = currentPlatform(),
+            )
+            viewModel.setTrackTextVisible(isVisible)
+        }
         binding.back.setOnClickListener { finish() }
-        binding.play.setOnClickListener { controller?.let { if (it.playWhenReady) it.pause() else it.play() } }
-        binding.previous.setOnClickListener { skipAndPlay { seekToPrevious() } }
-        binding.next.setOnClickListener { skipAndPlay { seekToNext() } }
+        binding.play.setOnClickListener {
+            controller?.let { player ->
+                MusicAnalytics.playback(
+                    if (player.playWhenReady) {
+                        MusicAnalytics.PlaybackAction.PAUSE
+                    } else {
+                        MusicAnalytics.PlaybackAction.PLAY
+                    },
+                    MusicAnalytics.Surface.PLAYER,
+                    currentPlatform(),
+                    activeQueue.size,
+                )
+                if (player.playWhenReady) player.pause() else player.play()
+            }
+        }
+        binding.previous.setOnClickListener {
+            MusicAnalytics.playback(
+                MusicAnalytics.PlaybackAction.PREVIOUS,
+                MusicAnalytics.Surface.PLAYER,
+                currentPlatform(),
+                activeQueue.size,
+            )
+            skipAndPlay { seekToPrevious() }
+        }
+        binding.next.setOnClickListener {
+            MusicAnalytics.playback(
+                MusicAnalytics.PlaybackAction.NEXT,
+                MusicAnalytics.Surface.PLAYER,
+                currentPlatform(),
+                activeQueue.size,
+            )
+            skipAndPlay { seekToNext() }
+        }
         binding.shuffle.setOnClickListener {
             viewModel.nextPlaybackMode()
+            MusicAnalytics.playback(
+                action = viewModel.state.value.playbackMode.toAnalyticsAction(),
+                surface = MusicAnalytics.Surface.PLAYER,
+                platform = currentPlatform(),
+                queueSize = activeQueue.size,
+            )
         }
         binding.favorite.setOnClickListener {
             val track = viewModel.state.value.track
             if (track.id.isBlank()) return@setOnClickListener
             lifecycleScope.launch {
-                libraryRepository.setFavorite(
-                    track.toLibraryTrack(artworkFallbackRes = R.drawable.home_cover_recommended_3),
-                    favorite = !viewModel.state.value.isFavorite,
-                )
+                val favorite = !viewModel.state.value.isFavorite
+                runCatching {
+                    libraryRepository.setFavorite(
+                        track.toLibraryTrack(artworkFallbackRes = R.drawable.home_cover_recommended_3),
+                        favorite = favorite,
+                    )
+                }.onSuccess {
+                    MusicAnalytics.trackAction(
+                        action = if (favorite) {
+                            MusicAnalytics.TrackAction.FAVORITE_ADD
+                        } else {
+                            MusicAnalytics.TrackAction.FAVORITE_REMOVE
+                        },
+                        surface = MusicAnalytics.Surface.PLAYER,
+                        platform = track.artistRef?.platform,
+                        outcome = MusicAnalytics.Outcome.SUCCESS,
+                    )
+                }.onFailure {
+                    MusicAnalytics.trackAction(
+                        action = if (favorite) {
+                            MusicAnalytics.TrackAction.FAVORITE_ADD
+                        } else {
+                            MusicAnalytics.TrackAction.FAVORITE_REMOVE
+                        },
+                        surface = MusicAnalytics.Surface.PLAYER,
+                        platform = track.artistRef?.platform,
+                        outcome = MusicAnalytics.Outcome.FAILURE,
+                    )
+                }
             }
         }
         binding.addToPlaylist.setOnClickListener {
             val track = viewModel.state.value.track
             if (track.id.isNotBlank()) {
+                MusicAnalytics.trackAction(
+                    MusicAnalytics.TrackAction.ADD_TO_PLAYLIST,
+                    MusicAnalytics.Surface.PLAYER,
+                    track.artistRef?.platform,
+                )
                 playlistDialogs.showPlaylistPicker(
                     track.toLibraryTrack(artworkFallbackRes = R.drawable.home_cover_recommended_3),
                 )
             }
         }
         binding.queue.setOnClickListener { showPlaybackQueue() }
-        binding.share.setOnClickListener { shareTrack() }
+        binding.share.setOnClickListener {
+            MusicAnalytics.playback(
+                MusicAnalytics.PlaybackAction.SHARE,
+                MusicAnalytics.Surface.PLAYER,
+                currentPlatform(),
+            )
+            shareTrack()
+        }
         binding.seekBar.onSeekStarted = { userSeeking = true }
         binding.seekBar.onSeekChanged = { fraction ->
             val duration = controller?.duration?.takeIf { it > 0 }
@@ -237,6 +321,12 @@ class PlayerActivity : AppCompatActivity() {
         binding.seekBar.onSeekFinished = { fraction ->
             controller?.takeIf { it.duration > 0 }?.let { player ->
                 player.seekTo((player.duration * fraction).toLong())
+                MusicAnalytics.playback(
+                    MusicAnalytics.PlaybackAction.SEEK,
+                    MusicAnalytics.Surface.PLAYER,
+                    currentPlatform(),
+                    activeQueue.size,
+                )
             }
             userSeeking = false
         }
@@ -302,7 +392,18 @@ class PlayerActivity : AppCompatActivity() {
             isFocusable = track.artistRef != null
             alpha = if (track.artistRef != null) 1f else 0.82f
             setOnClickListener {
-                track.artistRef?.let { artist -> ArtistActivity.open(this@PlayerActivity, artist) }
+                track.artistRef?.let { artist ->
+                    MusicAnalytics.trackAction(
+                        MusicAnalytics.TrackAction.OPEN_ARTIST,
+                        MusicAnalytics.Surface.PLAYER,
+                        artist.platform,
+                    )
+                    ArtistActivity.open(
+                        this@PlayerActivity,
+                        artist,
+                        InterstitialAdPlacement.PLAYER_ARTIST_NAME_ENTRY,
+                    )
+                }
             }
         }
         renderTrackText(track)
@@ -374,6 +475,9 @@ class PlayerActivity : AppCompatActivity() {
                         putString(MEDIA_METADATA_ARTIST_ID_KEY, artist.id)
                         putString(MEDIA_METADATA_ARTIST_PLATFORM_KEY, artist.platform.name)
                     }
+                    track.artworkCandidates().takeIf { it.isNotEmpty() }?.let { candidates ->
+                        putStringArrayList(MEDIA_METADATA_ARTWORK_THUMBNAILS_KEY, ArrayList(candidates))
+                    }
                 },
             )
             .build()
@@ -418,6 +522,12 @@ class PlayerActivity : AppCompatActivity() {
         val player = controller ?: return
         val tracks = activeQueue
         if (tracks.isEmpty()) return
+        MusicAnalytics.playback(
+            MusicAnalytics.PlaybackAction.QUEUE_OPEN,
+            MusicAnalytics.Surface.PLAYER,
+            currentPlatform(),
+            tracks.size,
+        )
         queueSheet?.dismiss()
         queueSheet = PlaybackQueueBottomSheet(
             context = this,
@@ -427,6 +537,12 @@ class PlayerActivity : AppCompatActivity() {
             onTrackSelected = { track ->
                 val index = tracks.indexOfFirst { it.id == track.id }
                 if (index >= 0) {
+                    MusicAnalytics.playback(
+                        MusicAnalytics.PlaybackAction.QUEUE_SELECT,
+                        MusicAnalytics.Surface.PLAYER,
+                        track.artistRef?.platform,
+                        tracks.size,
+                    )
                     player.seekToDefaultPosition(index)
                     player.play()
                 }
@@ -442,6 +558,14 @@ class PlayerActivity : AppCompatActivity() {
             PlaybackMode.SHUFFLE -> R.string.player_shuffle
         },
     )
+
+    private fun PlaybackMode.toAnalyticsAction(): MusicAnalytics.PlaybackAction = when (this) {
+        PlaybackMode.SEQUENTIAL -> MusicAnalytics.PlaybackAction.MODE_SEQUENTIAL
+        PlaybackMode.REPEAT_ONE -> MusicAnalytics.PlaybackAction.MODE_REPEAT_ONE
+        PlaybackMode.SHUFFLE -> MusicAnalytics.PlaybackAction.MODE_SHUFFLE
+    }
+
+    private fun currentPlatform() = viewModel.state.value.track.artistRef?.platform
 
     private fun shareTrack() {
         val storeUrl = "https://play.google.com/store/apps/details?id=$packageName"
@@ -475,25 +599,14 @@ class PlayerActivity : AppCompatActivity() {
         private const val PROGRESS_INTERVAL_MS = 500L
         private const val MAX_ARTWORK_PIXELS = 720
         private const val MAX_QUEUE_SIZE = 100
+        private const val TAG = "PlayerActivity"
 
         /** 对外调用时传入完整列表和当前歌曲 id，队列会限制大小避免 Binder 事务过大。 */
         fun open(context: Context, queue: List<HomeTrackUi>, currentTrackId: String) {
             val tracks = queue.asSequence()
                 .distinctBy(HomeTrackUi::id)
                 .take(MAX_QUEUE_SIZE)
-                .map { track ->
-                    PlayerTrack(
-                        id = track.id,
-                        title = track.title,
-                        artist = track.artist,
-                        artworkUrl = track.artworkUrl,
-                        streamUrl = track.streamUrl,
-                        durationMs = track.durationMs,
-                        lyrics = track.lyrics,
-                        description = track.description,
-                        artistRef = track.artistRef,
-                    )
-                }
+                .map(HomeTrackUi::toPlayerTrack)
                 .toCollection(ArrayList())
             openQueue(context, tracks, currentTrackId)
         }
@@ -504,13 +617,17 @@ class PlayerActivity : AppCompatActivity() {
                 .filter { it.id.isNotBlank() && it.streamUrl.isNotBlank() }
                 .distinctBy(PlayerTrack::id)
                 .take(MAX_QUEUE_SIZE)
+                // 跨 Activity 只携带 Mini Player 真正需要的有限候选链，控制 Intent 体积。
+                .map { track ->
+                    track.copy(artworkThumbnailUrls = track.artworkCandidates())
+                }
                 .toCollection(ArrayList())
             if (tracks.isEmpty()) return
             context.startActivity(
                 Intent(context, PlayerActivity::class.java).apply {
                     putExtra(EXTRA_QUEUE_JSON, Gson().toJson(tracks))
                     putExtra(EXTRA_CURRENT_ID, currentTrackId)
-                }.requestPostNavigationInterstitial(InterstitialAdPlacement.PLAYBACK_START),
+                },
             )
         }
 

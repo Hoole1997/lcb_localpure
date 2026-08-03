@@ -2,6 +2,7 @@ package com.example.lcb.app.library
 
 import androidx.annotation.DrawableRes
 import com.example.lcb.app.player.PlayerTrack
+import com.example.lcb.app.player.artworkCandidates
 import com.example.lcb.music.model.MusicArtistRef
 
 data class LibraryTrack(
@@ -27,6 +28,7 @@ data class LibraryTrack(
         lyrics = lyrics,
         description = description,
         artistRef = artistRef,
+        artworkThumbnailUrls = artworkThumbnailUrls,
     )
 }
 
@@ -46,7 +48,7 @@ sealed interface LibraryCollection {
 }
 
 fun PlayerTrack.toLibraryTrack(
-    artworkThumbnailUrls: List<String> = listOfNotNull(artworkUrl),
+    artworkThumbnailUrls: List<String> = artworkCandidates(),
     @DrawableRes artworkFallbackRes: Int,
 ) = LibraryTrack(
     id = id,

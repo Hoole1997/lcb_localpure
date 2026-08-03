@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.lcb.app.R
+import com.example.lcb.app.analytics.MusicAnalytics
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,6 +47,7 @@ class DeviceTrackDeletionActivity : AppCompatActivity() {
         awaitingSystemDeleteConsent = false
         awaitingRecoverableConsent = false
         if (result.resultCode != Activity.RESULT_OK) {
+            reportDeletion(MusicAnalytics.Outcome.DENIED)
             finishWithoutAnimation()
             return@registerForActivityResult
         }
@@ -65,7 +67,10 @@ class DeviceTrackDeletionActivity : AppCompatActivity() {
         if (granted) {
             deleteDirectly()
         } else {
-            showFailure(R.string.track_delete_storage_permission_required)
+            showFailure(
+                messageRes = R.string.track_delete_storage_permission_required,
+                outcome = MusicAnalytics.Outcome.DENIED,
+            )
         }
     }
 
@@ -159,11 +164,16 @@ class DeviceTrackDeletionActivity : AppCompatActivity() {
     }
 
     private fun completeSuccessfully() {
+        reportDeletion(MusicAnalytics.Outcome.SUCCESS)
         Toast.makeText(this, getString(R.string.track_delete_success, request.title), Toast.LENGTH_SHORT).show()
         finishWithoutAnimation()
     }
 
-    private fun showFailure(messageRes: Int) {
+    private fun showFailure(
+        messageRes: Int,
+        outcome: MusicAnalytics.Outcome = MusicAnalytics.Outcome.FAILURE,
+    ) {
+        reportDeletion(outcome)
         Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show()
         finishWithoutAnimation()
     }
@@ -174,20 +184,35 @@ class DeviceTrackDeletionActivity : AppCompatActivity() {
         overridePendingTransition(0, 0)
     }
 
+    private fun reportDeletion(outcome: MusicAnalytics.Outcome) {
+        MusicAnalytics.trackAction(
+            MusicAnalytics.TrackAction.DELETE_LOCAL,
+            request.surface,
+            platform = null,
+            outcome = outcome,
+        )
+    }
+
     private fun Intent.toDeleteRequest(): DeleteRequest? {
         getStringExtra(EXTRA_TRACK_ID)?.takeIf { it.startsWith(LOCAL_TRACK_ID_PREFIX) } ?: return null
         val title = getStringExtra(EXTRA_TRACK_TITLE)?.takeIf(String::isNotBlank) ?: return null
         val uri = getStringExtra(EXTRA_CONTENT_URI)?.let(Uri::parse) ?: return null
         if (uri.scheme != CONTENT_RESOLVER_SCHEME || uri.authority != MediaStore.AUTHORITY) return null
-        return DeleteRequest(title, uri)
+        val surface = parseTrackActionSurface(getStringExtra(EXTRA_SOURCE_SURFACE))
+        return DeleteRequest(title, uri, surface)
     }
 
-    private data class DeleteRequest(val title: String, val uri: Uri)
+    private data class DeleteRequest(
+        val title: String,
+        val uri: Uri,
+        val surface: MusicAnalytics.Surface,
+    )
 
     companion object {
         private const val EXTRA_TRACK_ID = "device_delete.track_id"
         private const val EXTRA_TRACK_TITLE = "device_delete.track_title"
         private const val EXTRA_CONTENT_URI = "device_delete.content_uri"
+        private const val EXTRA_SOURCE_SURFACE = "device_delete.source_surface"
         private const val STATE_AWAITING_SYSTEM_DELETE = "device_delete.awaiting_system"
         private const val STATE_AWAITING_RECOVERABLE = "device_delete.awaiting_recoverable"
         private const val STATE_AWAITING_LEGACY_PERMISSION = "device_delete.awaiting_legacy_permission"
@@ -196,12 +221,17 @@ class DeviceTrackDeletionActivity : AppCompatActivity() {
         private const val LOCAL_TRACK_ID_PREFIX = "LOCAL:"
         private const val CONTENT_RESOLVER_SCHEME = "content"
 
-        fun open(context: Context, track: TrackActionUiModel) {
+        internal fun open(
+            context: Context,
+            track: TrackActionUiModel,
+            surface: MusicAnalytics.Surface,
+        ) {
             if (!track.isLocalDeviceTrack) return
             val intent = Intent(context, DeviceTrackDeletionActivity::class.java).apply {
                 putExtra(EXTRA_TRACK_ID, track.id)
                 putExtra(EXTRA_TRACK_TITLE, track.title)
                 putExtra(EXTRA_CONTENT_URI, track.streamUrl)
+                putExtra(EXTRA_SOURCE_SURFACE, surface.value)
                 if (context !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
@@ -212,3 +242,8 @@ class DeviceTrackDeletionActivity : AppCompatActivity() {
         }
     }
 }
+
+/** 独立删除 Activity 解析失败时保留兼容兜底，避免旧 Intent 导致崩溃。 */
+internal fun parseTrackActionSurface(value: String?): MusicAnalytics.Surface =
+    MusicAnalytics.Surface.entries.firstOrNull { it.value == value }
+        ?: MusicAnalytics.Surface.TRACK_ACTION_SHEET

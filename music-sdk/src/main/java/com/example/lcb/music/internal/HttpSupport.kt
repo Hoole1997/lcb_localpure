@@ -67,7 +67,13 @@ private fun parseRetryAfter(value: String): Long? {
     }.getOrNull()
 }
 
-/** 只对凭据、限流、服务端和网络故障换凭据；业务参数错误直接返回，避免放大请求量。 */
+/**
+ * 只有凭据失效或单 Key 限流才切换凭据。
+ *
+ * 断网、DNS、超时和平台 5xx 与具体 Key 无关：继续轮询 Key 不仅会放大无效请求，还会让所有
+ * Key 进入冷却，导致网络恢复后的用户 Retry 无法真正发出请求。这类错误直接交给聚合层，
+ * 由聚合层尝试其他平台；下一次业务 Retry 仍可立即使用原凭据。
+ */
 internal suspend fun <Credential, Result> withKeyFailover(
     pool: KeyPool<Credential>,
     block: suspend (Credential) -> Result,
@@ -79,9 +85,8 @@ internal suspend fun <Credential, Result> withKeyFailover(
         try {
             return block(key)
         } catch (failure: ProviderRequestException) {
-            val switchable = failure.invalidCredential || failure.rateLimited ||
-                failure.statusCode == null || failure.statusCode >= 500
-            if (!switchable) throw failure
+            val credentialSpecificFailure = failure.invalidCredential || failure.rateLimited
+            if (!credentialSpecificFailure) throw failure
             pool.markFailure(key, failure)
             lastFailure = failure
         }

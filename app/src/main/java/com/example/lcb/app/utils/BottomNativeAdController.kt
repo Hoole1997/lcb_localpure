@@ -25,13 +25,13 @@ class BottomNativeAdController(
     private var miniPlayerVisible = false
 
     /** 同一个 Activity 实例最多请求一次，避免 StateFlow 重复渲染触发多次广告请求。 */
-    fun loadOnce(condition: () -> Boolean = { true }) {
+    fun loadOnce(condition: () -> Boolean = { true }, position: String? = null) {
         if (requested) return
         requested = true
-        activity.loadNative(adContainer, condition = condition) { success ->
+        activity.loadNative(adContainer, condition = condition, position = position, call = { success ->
             loaded = success
             renderInsets()
-        }
+        })
     }
 
     fun setMiniPlayerVisible(visible: Boolean) {
