@@ -17,7 +17,7 @@ class LcbApp : com.sonicpure.local.audio.tool.Gb1j0c8gtf8a89n70qeu() {
             // dev 1.0.1: openMainActivity -> scansafeloc
             returnToLauncher = { minicoreshield() },
             // 正式依赖没有 appShowAd API，展示广告前无需额外通知 Launcher SDK。
-            beforeShowAd = { scanmetasmartlitetool(activity, "", -1) },
+            beforeShowAd = { activity -> scanmetasmartlitetool(activity, "", -1) },
         )
         delegate.onCreate { listener -> scanmetasmartlitetool(listener) }
     }
