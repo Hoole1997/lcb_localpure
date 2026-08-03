@@ -24,6 +24,7 @@ interface HomeCallbacks {
     fun onArtistClick(track: HomeTrackUi)
     fun onTrackMore(track: HomeTrackUi)
     fun onShortcutClick(shortcut: HomeShortcutUi)
+    fun onLocalStateAction(action: HomeLocalStateAction)
 }
 
 /**
@@ -35,13 +36,15 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
     override fun getItemId(position: Int) = getItem(position).stableId
 
     override fun getItemViewType(position: Int) = when (getItem(position)) {
-        HomeListItem.Header -> TYPE_HEADER
+        is HomeListItem.Header -> TYPE_HEADER
         HomeListItem.RecommendedSkeleton -> TYPE_RECOMMENDED_SKELETON
         HomeListItem.MostPlayedSkeleton -> TYPE_MOST_PLAYED_SKELETON
         is HomeListItem.SectionTitle -> TYPE_SECTION
         is HomeListItem.Recommended -> TYPE_RECOMMENDED
         is HomeListItem.MostPlayed -> TYPE_MOST_PLAYED
         is HomeListItem.Shortcuts -> TYPE_SHORTCUTS
+        is HomeListItem.LocalState -> TYPE_LOCAL_STATE
+        is HomeListItem.LocalTrack -> TYPE_TRACK
         is HomeListItem.RecentTrack -> TYPE_TRACK
     }
 
@@ -59,6 +62,7 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
                 inflater.inflate(R.layout.item_home_most_played_skeleton, parent, false),
             )
             TYPE_SHORTCUTS -> ShortcutsHolder(ItemHomeShortcutsBinding.inflate(inflater, parent, false))
+            TYPE_LOCAL_STATE -> LocalStateHolder(ItemHomeLocalStateBinding.inflate(inflater, parent, false))
             else -> TrackHolder(ItemHomeTrackBinding.inflate(inflater, parent, false))
         }
     }
@@ -77,13 +81,15 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
 
     private fun bind(holder: RecyclerView.ViewHolder, item: HomeListItem) {
         when {
-            holder is HeaderHolder -> holder.bind()
+            holder is HeaderHolder && item is HomeListItem.Header -> holder.bind(item)
             holder is SkeletonHolder -> holder.start()
             holder is SectionHolder && item is HomeListItem.SectionTitle -> holder.bind(item)
             holder is RecommendedHolder && item is HomeListItem.Recommended -> holder.bind(item)
             holder is MostPlayedHolder && item is HomeListItem.MostPlayed -> holder.bind(item)
             holder is ShortcutsHolder && item is HomeListItem.Shortcuts -> holder.bind(item)
-            holder is TrackHolder && item is HomeListItem.RecentTrack -> holder.bind(item.track)
+            holder is LocalStateHolder && item is HomeListItem.LocalState -> holder.bind(item)
+            holder is TrackHolder && item is HomeListItem.LocalTrack -> holder.bind(item.track, TrackSource.LOCAL)
+            holder is TrackHolder && item is HomeListItem.RecentTrack -> holder.bind(item.track, TrackSource.RECENT)
         }
     }
 
@@ -128,9 +134,31 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
     }
 
     private inner class HeaderHolder(private val binding: ItemHomeHeaderBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind() {
-            binding.search.setOnClickListener { callbacks.onSearch() }
+        fun bind(item: HomeListItem.Header) {
+            binding.search.isVisible = item.showSearch
+            binding.search.setOnClickListener(
+                if (item.showSearch) View.OnClickListener { callbacks.onSearch() } else null,
+            )
             binding.settings.setOnClickListener { callbacks.onSettings() }
+        }
+    }
+
+    private inner class LocalStateHolder(
+        private val binding: ItemHomeLocalStateBinding,
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(item: HomeListItem.LocalState) {
+            binding.loading.isVisible = item.showProgress
+            binding.title.isVisible = item.titleRes != null
+            item.titleRes?.let(binding.title::setText)
+            binding.message.isVisible = item.messageRes != null
+            item.messageRes?.let(binding.message::setText)
+            binding.action.isVisible = item.actionRes != null && item.action != null
+            item.actionRes?.let(binding.action::setText)
+            binding.action.setOnClickListener(
+                item.action?.let { action ->
+                    View.OnClickListener { callbacks.onLocalStateAction(action) }
+                },
+            )
         }
     }
 
@@ -246,7 +274,7 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
     private inner class TrackHolder(private val binding: ItemHomeTrackBinding) : RecyclerView.ViewHolder(binding.root) {
         private var current: HomeTrackUi? = null
 
-        fun bind(track: HomeTrackUi) {
+        fun bind(track: HomeTrackUi, source: TrackSource) {
             current = track
             binding.title.text = track.title
             binding.artist.text = track.artist
@@ -254,7 +282,10 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
             bindArtwork(binding.cover, track)
             bindPlayback(mapOf(track.id to track.isPlaying))
             binding.root.setOnClickListener {
-                val queue = currentList.filterIsInstance<HomeListItem.RecentTrack>().map { it.track }
+                val queue = when (source) {
+                    TrackSource.LOCAL -> currentList.filterIsInstance<HomeListItem.LocalTrack>().map { it.track }
+                    TrackSource.RECENT -> currentList.filterIsInstance<HomeListItem.RecentTrack>().map { it.track }
+                }.queueStartingAt(track.id)
                 callbacks.onTrackClick(track, queue.ifEmpty { listOf(track) })
             }
             binding.more.setOnClickListener { callbacks.onTrackMore(track) }
@@ -323,6 +354,8 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
                     sameExceptPlayback(oldItem.tracks, newItem.tracks) -> newItem.tracks
                 oldItem is HomeListItem.RecentTrack && newItem is HomeListItem.RecentTrack &&
                     sameExceptPlayback(listOf(oldItem.track), listOf(newItem.track)) -> listOf(newItem.track)
+                oldItem is HomeListItem.LocalTrack && newItem is HomeListItem.LocalTrack &&
+                    sameExceptPlayback(listOf(oldItem.track), listOf(newItem.track)) -> listOf(newItem.track)
                 else -> return null
             }
             return PlaybackPayload(newTracks.associate { it.id to it.isPlaying })
@@ -335,6 +368,7 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
     }
 
     private companion object {
+        const val MAX_PLAYER_QUEUE_SIZE = 100
         const val TYPE_HEADER = 1
         const val TYPE_SECTION = 2
         const val TYPE_RECOMMENDED = 3
@@ -343,5 +377,14 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
         const val TYPE_TRACK = 6
         const val TYPE_RECOMMENDED_SKELETON = 7
         const val TYPE_MOST_PLAYED_SKELETON = 8
+        const val TYPE_LOCAL_STATE = 9
+    }
+
+    private enum class TrackSource { LOCAL, RECENT }
+
+    private fun List<HomeTrackUi>.queueStartingAt(trackId: String): List<HomeTrackUi> {
+        val selectedIndex = indexOfFirst { it.id == trackId }
+        if (selectedIndex < 0) return emptyList()
+        return (drop(selectedIndex) + take(selectedIndex)).take(MAX_PLAYER_QUEUE_SIZE)
     }
 }

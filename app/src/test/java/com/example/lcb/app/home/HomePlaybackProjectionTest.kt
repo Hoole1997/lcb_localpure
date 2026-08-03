@@ -11,11 +11,13 @@ class HomePlaybackProjectionTest {
         val content = HomeContent(
             recommended = listOf(active),
             mostPlayed = listOf(active),
+            localMusic = LocalHomeMusicState.Loaded(listOf(active)),
             recentlyPlayed = listOf(active),
         ).withPlayback(activeTrackId = active.id, isActivelyPlaying = true)
 
         assertTrue(content.recommended.single().isPlaying)
         assertTrue(content.mostPlayed.single().isPlaying)
+        assertTrue((content.localMusic as LocalHomeMusicState.Loaded).tracks.single().isPlaying)
         assertTrue(content.recentlyPlayed.single().isPlaying)
     }
 

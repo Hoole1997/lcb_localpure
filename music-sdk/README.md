@@ -90,13 +90,36 @@ Audius 的专辑与歌单共用 playlist 实体，SDK 根据 `is_album` 归一�
 
 Audius 会将 API Key 与同一组 Bearer Token 一起轮换，且任何日志都不会输出原始凭据。需要注意：Firebase Remote Config 和 APK 都不是密钥保险库，有能力分析客户端的人仍可取得下发值。如 Bearer 具有收藏、上传等写权限，应改由可信后端代持；SDK 不接收 API Secret。
 
-## Firebase Remote Config 格式
+## 远端配置格式
 
-Application 层可监听以下字段：
+Application 通过 CoreKit 的 `ConfigRemoteManager.getString()` 读取以下字段，Firebase 的拉取、
+缓存、激活和更新回调不在音乐业务层重复实现：
 
-- `music_jamendo_client_ids`：JSON 字符串数组，例如 `["id1","id2"]`；也兼容 `id1,id2`。
-- `music_audius_credentials`：推荐使用 `[{"apiKey":"key1","bearerToken":"token1"}]`。
-- `music_audius_api_keys` + `music_audius_bearer_tokens`：兼容旧版逗号列表，两个列表按下标成对。
+- `music_home_mode`：按用户渠道配置首页 A/B 面：
 
-字段缺失或解析失败时保留该平台当前凭据；明确下发 `[]` 才会停用对应平台。
+```json
+{
+  "natural": "local",
+  "paid": "online"
+}
+```
+
+`natural` 对应自然用户，`paid` 对应买量用户。每个值均支持 `local`/`a`（本地 A 面）和
+`online`/`b`（在线 B 面）；整个配置、当前渠道字段缺失或值非法时默认本地 A 面。
+
+- `music_sdk_config`：统一的音乐平台凭据 JSON，应用通过 `ConfigRemoteManager.getString()` 获取：
+
+```json
+{
+  "jamendoClientIds": ["id1", "id2"],
+  "audiusCredentials": [
+    {"apiKey": "key1", "bearerToken": "token1"},
+    {"apiKey": "key2", "bearerToken": "token2"}
+  ]
+}
+```
+
+字段缺失时保留对应平台的当前配置；显式传空数组可以停用对应平台。格式错误时 SDK
+继续使用本地或上一次有效凭据，避免错误下发导致所有在线音乐不可用。
+
 本地凭据也可以全部为空，SDK 会以不可用健康状态启动，待远程凭据到达后再启用 Provider。

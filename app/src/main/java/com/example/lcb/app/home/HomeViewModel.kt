@@ -11,10 +11,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
+class HomeViewModel(
+    private val repository: HomeRepository,
+    private val mode: HomeExperienceMode,
+) : ViewModel() {
     // 这里只保存 MediaSession 的 UI 投影，不再在首页自行切换真假播放状态。
     private val playback = MutableStateFlow<PlaybackSnapshot?>(null)
-    private val loading = MutableStateFlow(true)
+    private val loading = MutableStateFlow(mode == HomeExperienceMode.ONLINE)
     private val loadError = MutableStateFlow<AppLoadError?>(null)
 
     val uiState = combine(repository.content, playback, loading, loadError) { content, snapshot, isLoading, error ->
@@ -22,53 +25,44 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
             activeTrackId = snapshot?.track?.id,
             isActivelyPlaying = snapshot?.isActivelyPlaying == true,
         )
+        val localLoading = renderedContent.localMusic is LocalHomeMusicState.Loading
         HomeUiState(
-            items = buildList {
-                add(HomeListItem.Header)
-                if (renderedContent.recommended.isNotEmpty() || isLoading) {
-                    add(HomeListItem.SectionTitle(2L, R.string.home_section_recommended, R.string.home_section_more))
-                    add(
-                        if (renderedContent.recommended.isEmpty()) HomeListItem.RecommendedSkeleton
-                        else HomeListItem.Recommended(renderedContent.recommended.chunked(4)),
-                    )
-                }
-                if (renderedContent.mostPlayed.isNotEmpty() || isLoading) {
-                    add(HomeListItem.SectionTitle(3L, R.string.home_section_most_played))
-                    add(
-                        if (renderedContent.mostPlayed.isEmpty()) HomeListItem.MostPlayedSkeleton
-                        else HomeListItem.MostPlayed(renderedContent.mostPlayed),
-                    )
-                }
-                add(HomeListItem.SectionTitle(4L, R.string.home_section_my_playlist))
-                add(HomeListItem.Shortcuts(renderedContent.shortcuts))
-                // 标题始终位于 My Playlist 下方；无历史时不展示无效的 Play all 操作。
-                add(
-                    HomeListItem.SectionTitle(
-                        5L,
-                        R.string.home_section_recently_played,
-                        R.string.home_play_all.takeIf { renderedContent.recentlyPlayed.isNotEmpty() },
-                    ),
-                )
-                addAll(renderedContent.recentlyPlayed.map(HomeListItem::RecentTrack))
-            },
+            mode = mode,
+            items = buildHomeItems(mode, renderedContent, isLoading),
             miniPlayer = snapshot?.let { MiniPlayerUi(it.track, it.isPlaying) },
-            isLoading = isLoading,
-            loadError = error,
+            isLoading = if (mode == HomeExperienceMode.LOCAL) localLoading else isLoading,
+            loadError = error.takeIf { mode == HomeExperienceMode.ONLINE },
+            canRequestBottomAd = when (mode) {
+                HomeExperienceMode.ONLINE -> !isLoading
+                HomeExperienceMode.LOCAL -> renderedContent.localMusic is LocalHomeMusicState.Loaded
+            },
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        HomeUiState(mode = mode, isLoading = mode == HomeExperienceMode.ONLINE),
+    )
 
     init {
-        refresh()
+        if (mode == HomeExperienceMode.ONLINE) refresh()
     }
 
     fun refresh() {
         viewModelScope.launch {
-            loading.value = true
-            loadError.value = null
+            if (mode == HomeExperienceMode.ONLINE) {
+                loading.value = true
+                loadError.value = null
+            }
             runCatching { repository.refresh() }
-                .onFailure { loadError.value = AppLoadError.HOME }
-            loading.value = false
+                .onFailure {
+                    if (mode == HomeExperienceMode.ONLINE) loadError.value = AppLoadError.HOME
+                }
+            if (mode == HomeExperienceMode.ONLINE) loading.value = false
         }
+    }
+
+    fun setLocalMediaPermission(granted: Boolean) {
+        if (mode == HomeExperienceMode.LOCAL) repository.setLocalMediaPermission(granted)
     }
 
     /** 由连接 MediaSession 的页面同步，ViewModel 不直接推测播放器状态。 */
@@ -83,15 +77,111 @@ class HomeViewModel(private val repository: HomeRepository) : ViewModel() {
     fun recentQueue(): List<HomeTrackUi> =
         uiState.value.items.filterIsInstance<HomeListItem.RecentTrack>().map { it.track }
 
+    fun localQueue(): List<HomeTrackUi> =
+        uiState.value.items.filterIsInstance<HomeListItem.LocalTrack>().map { it.track }.take(MAX_PLAYER_QUEUE_SIZE)
+
     private data class PlaybackSnapshot(
         val track: HomeTrackUi,
         val isPlaying: Boolean,
         val isActivelyPlaying: Boolean,
     )
 
-    class Factory(private val repository: HomeRepository) : ViewModelProvider.Factory {
+    class Factory(
+        private val repository: HomeRepository,
+        private val mode: HomeExperienceMode,
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = HomeViewModel(repository) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = HomeViewModel(repository, mode) as T
+    }
+
+    private companion object {
+        const val MAX_PLAYER_QUEUE_SIZE = 100
+    }
+}
+
+/** 列表结构作为纯函数生成，确保 A/B 面互斥且便于测试远端模式回归。 */
+internal fun buildHomeItems(
+    mode: HomeExperienceMode,
+    content: HomeContent,
+    isOnlineLoading: Boolean,
+): List<HomeListItem> = buildList {
+    add(HomeListItem.Header(showSearch = mode == HomeExperienceMode.ONLINE))
+    when (mode) {
+        HomeExperienceMode.LOCAL -> addLocalHomeItems(content.localMusic)
+        HomeExperienceMode.ONLINE -> addOnlineHomeItems(content, isOnlineLoading)
+    }
+    add(HomeListItem.SectionTitle(HomeSectionId.MY_PLAYLIST, R.string.home_section_my_playlist))
+    add(HomeListItem.Shortcuts(content.shortcuts))
+    add(
+        HomeListItem.SectionTitle(
+            HomeSectionId.RECENTLY_PLAYED,
+            R.string.home_section_recently_played,
+            R.string.home_play_all.takeIf { content.recentlyPlayed.isNotEmpty() },
+        ),
+    )
+    addAll(content.recentlyPlayed.map(HomeListItem::RecentTrack))
+}
+
+private fun MutableList<HomeListItem>.addOnlineHomeItems(content: HomeContent, isLoading: Boolean) {
+    if (content.recommended.isNotEmpty() || isLoading) {
+        add(
+            HomeListItem.SectionTitle(
+                HomeSectionId.RECOMMENDED,
+                R.string.home_section_recommended,
+                R.string.home_section_more,
+            ),
+        )
+        add(
+            if (content.recommended.isEmpty()) HomeListItem.RecommendedSkeleton
+            else HomeListItem.Recommended(content.recommended.chunked(4)),
+        )
+    }
+    if (content.mostPlayed.isNotEmpty() || isLoading) {
+        add(HomeListItem.SectionTitle(HomeSectionId.MOST_PLAYED, R.string.home_section_most_played))
+        add(
+            if (content.mostPlayed.isEmpty()) HomeListItem.MostPlayedSkeleton
+            else HomeListItem.MostPlayed(content.mostPlayed),
+        )
+    }
+}
+
+private fun MutableList<HomeListItem>.addLocalHomeItems(localMusic: LocalHomeMusicState) {
+    val tracks = (localMusic as? LocalHomeMusicState.Loaded)?.tracks.orEmpty()
+    add(
+        HomeListItem.SectionTitle(
+            HomeSectionId.LOCAL_MUSIC,
+            R.string.local_music_title,
+            R.string.home_play_all.takeIf { tracks.isNotEmpty() },
+        ),
+    )
+    when (localMusic) {
+        LocalHomeMusicState.Hidden,
+        LocalHomeMusicState.PermissionRequired -> add(
+            HomeListItem.LocalState(
+                titleRes = R.string.local_music_permission_title,
+                messageRes = R.string.local_music_permission_message,
+                actionRes = R.string.local_music_allow_access,
+                action = HomeLocalStateAction.REQUEST_PERMISSION,
+            ),
+        )
+        LocalHomeMusicState.Loading -> add(HomeListItem.LocalState(showProgress = true))
+        LocalHomeMusicState.Empty -> add(
+            HomeListItem.LocalState(
+                titleRes = R.string.local_music_empty_title,
+                messageRes = R.string.local_music_empty_message,
+                actionRes = R.string.local_music_scan_again,
+                action = HomeLocalStateAction.RETRY,
+            ),
+        )
+        LocalHomeMusicState.Error -> add(
+            HomeListItem.LocalState(
+                titleRes = R.string.local_music_error_title,
+                messageRes = AppLoadError.LOCAL_MUSIC.messageRes,
+                actionRes = R.string.search_retry,
+                action = HomeLocalStateAction.RETRY,
+            ),
+        )
+        is LocalHomeMusicState.Loaded -> addAll(localMusic.tracks.map(HomeListItem::LocalTrack))
     }
 }
 
@@ -103,6 +193,10 @@ internal fun HomeContent.withPlayback(activeTrackId: String?, isActivelyPlaying:
     return copy(
         recommended = recommended.project(),
         mostPlayed = mostPlayed.project(),
+        localMusic = when (val local = localMusic) {
+            is LocalHomeMusicState.Loaded -> local.copy(tracks = local.tracks.project())
+            else -> local
+        },
         recentlyPlayed = recentlyPlayed.project(),
     )
 }

@@ -1,6 +1,7 @@
 package com.example.lcb.app.trackactions
 
 import androidx.annotation.DrawableRes
+import com.example.lcb.app.localmusic.LocalMusicIdentity
 import com.example.lcb.music.model.MusicArtistRef
 
 /**
@@ -25,10 +26,9 @@ data class TrackActionUiModel(
 ) {
     /** 删除设备文件是严格的本地能力，不能由在线页面误配置后显示。 */
     val isLocalDeviceTrack: Boolean
-        get() = id.startsWith(LOCAL_TRACK_ID_PREFIX) && streamUrl.startsWith(MEDIA_CONTENT_URI_PREFIX)
+        get() = LocalMusicIdentity.matches(id) && streamUrl.startsWith(MEDIA_CONTENT_URI_PREFIX)
 
     private companion object {
-        const val LOCAL_TRACK_ID_PREFIX = "LOCAL:"
         const val MEDIA_CONTENT_URI_PREFIX = "content://media/"
     }
 }

@@ -3,6 +3,13 @@ package com.example.lcb.app.localmusic
 import com.example.lcb.app.player.PlayerTrack
 import com.example.lcb.app.ui.AppLoadError
 
+/** 本地歌曲身份规则的唯一来源，播放器、首页和文件删除流程共同复用。 */
+internal object LocalMusicIdentity {
+    const val ID_PREFIX = "LOCAL:"
+
+    fun matches(trackId: String): Boolean = trackId.startsWith(ID_PREFIX)
+}
+
 /** MediaStore 元数据模型；音频内容始终通过 content URI 流式读取，不进入应用内存。 */
 data class LocalMusicTrack(
     val mediaStoreId: Long,
@@ -14,7 +21,7 @@ data class LocalMusicTrack(
     val contentUri: String,
     val durationMs: Long,
 ) {
-    val id: String = "LOCAL:$mediaStoreId"
+    val id: String = "${LocalMusicIdentity.ID_PREFIX}$mediaStoreId"
 
     fun toPlayerTrack() = PlayerTrack(
         id = id,

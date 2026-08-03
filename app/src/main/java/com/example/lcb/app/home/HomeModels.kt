@@ -36,11 +36,31 @@ data class HomeShortcutUi(
 
 enum class ShortcutStyle { NEUTRAL, FAVORITE, LOCAL, CUSTOM_PLAYLIST }
 
+/** A 面的 MediaStore 状态由 Repository 提供，UI 不接触异常或平台查询细节。 */
+sealed interface LocalHomeMusicState {
+    data object Hidden : LocalHomeMusicState
+    data object PermissionRequired : LocalHomeMusicState
+    data object Loading : LocalHomeMusicState
+    data object Empty : LocalHomeMusicState
+    data object Error : LocalHomeMusicState
+    data class Loaded(val tracks: List<HomeTrackUi>) : LocalHomeMusicState
+}
+
+enum class HomeLocalStateAction { REQUEST_PERMISSION, RETRY }
+
+internal object HomeSectionId {
+    const val RECOMMENDED = 2L
+    const val MOST_PLAYED = 3L
+    const val MY_PLAYLIST = 4L
+    const val RECENTLY_PLAYED = 5L
+    const val LOCAL_MUSIC = 6L
+}
+
 /** 单 RecyclerView 的多类型条目；每个条目拥有跨刷新稳定的 id。 */
 sealed interface HomeListItem {
     val stableId: Long
 
-    data object Header : HomeListItem { override val stableId = 1L }
+    data class Header(val showSearch: Boolean) : HomeListItem { override val stableId = 1L }
     data object RecommendedSkeleton : HomeListItem { override val stableId = 11L }
     data object MostPlayedSkeleton : HomeListItem { override val stableId = 21L }
     data class SectionTitle(
@@ -53,6 +73,18 @@ sealed interface HomeListItem {
     data class Recommended(val groups: List<List<HomeTrackUi>>) : HomeListItem { override val stableId = 10L }
     data class MostPlayed(val tracks: List<HomeTrackUi>) : HomeListItem { override val stableId = 20L }
     data class Shortcuts(val items: List<HomeShortcutUi>) : HomeListItem { override val stableId = 30L }
+    data class LocalState(
+        @param:StringRes val titleRes: Int? = null,
+        @param:StringRes val messageRes: Int? = null,
+        @param:StringRes val actionRes: Int? = null,
+        val action: HomeLocalStateAction? = null,
+        val showProgress: Boolean = false,
+    ) : HomeListItem {
+        override val stableId = 40L
+    }
+    data class LocalTrack(val track: HomeTrackUi) : HomeListItem {
+        override val stableId = 20_000L + track.id.hashCode().toLong()
+    }
     data class RecentTrack(val track: HomeTrackUi) : HomeListItem {
         override val stableId = 10_000L + track.id.hashCode().toLong()
     }
@@ -61,8 +93,10 @@ sealed interface HomeListItem {
 data class MiniPlayerUi(val track: HomeTrackUi, val isPlaying: Boolean)
 
 data class HomeUiState(
+    val mode: HomeExperienceMode = HomeExperienceMode.LOCAL,
     val items: List<HomeListItem> = emptyList(),
     val miniPlayer: MiniPlayerUi? = null,
     val isLoading: Boolean = true,
     val loadError: AppLoadError? = null,
+    val canRequestBottomAd: Boolean = false,
 )

@@ -1,10 +1,14 @@
 package com.example.lcb.app
 
 import android.content.ComponentName
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -19,6 +23,9 @@ import com.example.lcb.app.databinding.ActivityMainHomeBinding
 import com.example.lcb.app.artist.ArtistActivity
 import com.example.lcb.app.home.*
 import com.example.lcb.app.library.PlaylistActivity
+import com.example.lcb.app.localmusic.LocalMediaPermission
+import com.example.lcb.app.localmusic.LocalMusicIdentity
+import com.example.lcb.app.localmusic.MediaStoreLocalMusicRepository
 import com.example.lcb.app.localmusic.LocalMusicActivity
 import com.example.lcb.app.library.dialog.PlaylistDialogsController
 import com.example.lcb.app.player.PlayerActivity
@@ -43,20 +50,33 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import net.corekit.core.controller.AdSlotSwitchController
 
 class MainActivity : AppCompatActivity(), HomeCallbacks {
     private lateinit var binding: ActivityMainHomeBinding
+    private var homeInitialized = false
+    private var initialVisibilityHandled = false
+    private var homeModeRefreshJob: Job? = null
+    private var modeRestartInProgress = false
     private var displayedError: AppLoadError? = null
     private val libraryRepository by lazy(LazyThreadSafetyMode.NONE) {
         MusicLibraryDependencies.repository(this)
     }
+    private val homeMode: HomeExperienceMode
+        get() = HomeExperienceModeStore.current
     private val homeRepository by lazy(LazyThreadSafetyMode.NONE) {
-        MusicSdkHomeRepository(MusicDependencies.sdk, libraryRepository)
+        when (homeMode) {
+            HomeExperienceMode.LOCAL -> LocalHomeRepository(
+                localMusicRepository = MediaStoreLocalMusicRepository(this),
+                libraryRepository = libraryRepository,
+            )
+            HomeExperienceMode.ONLINE -> MusicSdkHomeRepository(MusicDependencies.sdk, libraryRepository)
+        }
     }
     private val viewModel: HomeViewModel by viewModels {
-        HomeViewModel.Factory(homeRepository)
+        HomeViewModel.Factory(homeRepository, homeMode)
     }
     private val homeAdapter by lazy(LazyThreadSafetyMode.NONE) { HomeAdapter(this) }
     private val miniPlayerBinder by lazy(LazyThreadSafetyMode.NONE) {
@@ -75,7 +95,17 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
     private var queueSheet: PlaybackQueueBottomSheet? = null
+    private var localPermissionRequestAttempted = false
     private lateinit var bottomAdController: BottomNativeAdController
+    private val localPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        localPermissionRequestAttempted = true
+        MusicAnalytics.localMediaPermission(
+            if (granted) MusicAnalytics.Outcome.GRANTED else MusicAnalytics.Outcome.DENIED,
+        )
+        if (homeInitialized) viewModel.setLocalMediaPermission(granted)
+    }
     private val playerListener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {
             syncPlaybackState(player)
@@ -84,33 +114,95 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        localPermissionRequestAttempted = savedInstanceState
+            ?.getBoolean(STATE_LOCAL_PERMISSION_ATTEMPTED) == true
         enableEdgeToEdge()
         binding = ActivityMainHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         configureInsets()
-        configureList()
-        configureMiniPlayer()
-        configureAds()
-        observeState()
         configureBackNavigation()
-        if (savedInstanceState == null) MusicAnalytics.screenView(MusicAnalytics.Screen.HOME)
+        // 模式未解析前不提前构造本地/在线 Repository，避免错误页面闪现和无意义的权限弹框。
+        binding.miniPlayer.root.visibility = android.view.View.GONE
+        lifecycleScope.launch {
+            MusicRemoteConfigSync.awaitHomeBootstrap()
+            initializeHome(savedInstanceState)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 用户可能从系统设置返回，恢复时重新校准权限而不是沿用旧状态。
+        if (homeInitialized && homeMode == HomeExperienceMode.LOCAL) {
+            viewModel.setLocalMediaPermission(LocalMediaPermission.isGranted(this))
+        }
+        if (homeInitialized) {
+            // 首次可见前已经完成 bootstrap 强制刷新，后续每次 onResume 再执行五秒检测。
+            if (initialVisibilityHandled) refreshHomeMode() else initialVisibilityHandled = true
+        }
+    }
+
+    override fun onPause() {
+        homeModeRefreshJob?.cancel()
+        homeModeRefreshJob = null
+        super.onPause()
     }
 
     override fun onStart() {
         super.onStart()
-        connectPlaybackController()
+        if (homeInitialized) connectPlaybackController()
     }
 
     override fun onStop() {
-        queueSheet?.dismiss()
-        queueSheet = null
-        controller?.removeListener(playerListener)
-        controller = null
-        controllerFuture?.let(MediaController::releaseFuture)
-        controllerFuture = null
-        miniPlayerBinder.updateControllerState(controllerReady = false, hasQueue = false)
+        if (homeInitialized) {
+            queueSheet?.dismiss()
+            queueSheet = null
+            controller?.removeListener(playerListener)
+            controller = null
+            controllerFuture?.let(MediaController::releaseFuture)
+            controllerFuture = null
+            miniPlayerBinder.updateControllerState(controllerReady = false, hasQueue = false)
+        }
         super.onStop()
+    }
+
+    /** 只有远端模式确定后才一次性装配首页依赖，确保一个 Activity 实例只对应一种产品形态。 */
+    private fun initializeHome(savedInstanceState: Bundle?) {
+        if (homeInitialized || isFinishing || isDestroyed) return
+        homeInitialized = true
+        configureList()
+        configureMiniPlayer()
+        configureAds()
+        observeState()
+        if (savedInstanceState == null) MusicAnalytics.screenView(MusicAnalytics.Screen.HOME)
+        HomeExperienceModeDiagnostics.logActivitySelection()
+        initializeLocalHomeIfNeeded()
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) connectPlaybackController()
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) initialVisibilityHandled = true
+    }
+
+    /** 每次首页可见都异步检查最新 A/B 值；模式变化时用新 Activity 释放旧模式整套依赖。 */
+    private fun refreshHomeMode() {
+        if (modeRestartInProgress) return
+        homeModeRefreshJob?.cancel()
+        homeModeRefreshJob = lifecycleScope.launch {
+            val changed = MusicRemoteConfigSync.refreshHomeModeOnResume()
+            if (!changed || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@launch
+
+            modeRestartInProgress = true
+            val replacement = Intent(this@MainActivity, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+            }
+            startActivity(replacement)
+            finish()
+            @Suppress("DEPRECATION")
+            overridePendingTransition(0, 0)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean(STATE_LOCAL_PERMISSION_ATTEMPTED, localPermissionRequestAttempted)
+        super.onSaveInstanceState(outState)
     }
 
     private fun configureList() = with(binding.homeList) {
@@ -175,7 +267,7 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
                     renderMiniPlayer(state.miniPlayer)
                     renderLoadError(state.loadError)
                     if (
-                        !state.isLoading &&
+                        state.canRequestBottomAd &&
                         AdSlotSwitchController.isEnabled(BusinessAdSwitchKey.HOME_BOTTOM_NATIVE)
                     ) {
                         bottomAdController.loadOnce(position = TAG)
@@ -228,7 +320,9 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
     }
 
     override fun onSearch() {
-        com.example.lcb.app.search.SearchActivity.open(this)
+        if (homeMode == HomeExperienceMode.ONLINE) {
+            com.example.lcb.app.search.SearchActivity.open(this)
+        }
     }
 
     override fun onSettings() {
@@ -237,10 +331,15 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
 
     override fun onSectionAction(sectionId: Long) {
         when (sectionId) {
-            2L -> com.example.lcb.app.recommended.RecommendedMusicActivity.open(this)
-            5L -> viewModel.recentQueue().takeIf(List<HomeTrackUi>::isNotEmpty)?.let { queue ->
-                onTrackClick(queue.first(), queue)
-            }
+            HomeSectionId.RECOMMENDED -> com.example.lcb.app.recommended.RecommendedMusicActivity.open(this)
+            HomeSectionId.RECENTLY_PLAYED -> viewModel.recentQueue()
+                .takeIf(List<HomeTrackUi>::isNotEmpty)?.let { queue ->
+                    onTrackClick(queue.first(), queue)
+                }
+            HomeSectionId.LOCAL_MUSIC -> viewModel.localQueue()
+                .takeIf(List<HomeTrackUi>::isNotEmpty)?.let { queue ->
+                    onTrackClick(queue.first(), queue)
+                }
             else -> toast("Open section")
         }
     }
@@ -283,6 +382,7 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
                 lyrics = track.lyrics,
                 description = track.description,
                 artistRef = track.artistRef,
+                showSongInfo = track.artistRef != null,
             ),
         )
     }
@@ -299,6 +399,37 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
 
     private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 
+    /** A 面首次进入直接申请音频权限；拒绝后由列表内按钮引导重试或进入系统设置。 */
+    private fun initializeLocalHomeIfNeeded() {
+        if (homeMode != HomeExperienceMode.LOCAL) return
+        val granted = LocalMediaPermission.isGranted(this)
+        viewModel.setLocalMediaPermission(granted)
+        if (!granted && !localPermissionRequestAttempted) requestLocalMediaPermission()
+    }
+
+    override fun onLocalStateAction(action: HomeLocalStateAction) {
+        when (action) {
+            HomeLocalStateAction.REQUEST_PERMISSION -> {
+                if (LocalMediaPermission.shouldOpenSettings(this, localPermissionRequestAttempted)) {
+                    MusicAnalytics.localMediaPermission(MusicAnalytics.Outcome.OPEN_SETTINGS)
+                    startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(
+                            Uri.fromParts("package", packageName, null),
+                        ),
+                    )
+                } else {
+                    requestLocalMediaPermission()
+                }
+            }
+            HomeLocalStateAction.RETRY -> viewModel.refresh()
+        }
+    }
+
+    private fun requestLocalMediaPermission() {
+        localPermissionRequestAttempted = true
+        localPermissionLauncher.launch(LocalMediaPermission.requiredPermission())
+    }
+
     private fun connectPlaybackController() {
         miniPlayerBinder.updateControllerState(controllerReady = false, hasQueue = false)
         val token = SessionToken(this, ComponentName(this, PlaybackService::class.java))
@@ -306,7 +437,7 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
         controllerFuture = future
         future.addListener(
             {
-                if (isFinishing || controllerFuture !== future) return@addListener
+                if (isFinishing || isDestroyed || controllerFuture !== future) return@addListener
                 runCatching { future.get() }.onSuccess { mediaController ->
                     controller = mediaController
                     mediaController.addListener(playerListener)
@@ -340,7 +471,12 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
             id = id,
             title = playerTrack.title,
             artist = playerTrack.artist,
-            artworkRes = R.drawable.home_cover_recommended_3,
+            // MediaSession 元数据不携带 drawable，按歌曲来源恢复正确占位图，避免本地 Mini Player 回退成在线封面。
+            artworkRes = if (LocalMusicIdentity.matches(id)) {
+                R.drawable.placeholder_local_music_track
+            } else {
+                R.drawable.home_cover_recommended_3
+            },
             artworkUrl = playerTrack.artworkUrl,
             artworkThumbnailUrls = playerTrack.artworkCandidates(),
             streamUrl = playerTrack.streamUrl,
@@ -384,6 +520,7 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
 
     private companion object {
         const val HOME_LIST_BOTTOM_PADDING_DP = 18
+        const val STATE_LOCAL_PERMISSION_ATTEMPTED = "home.local_permission_attempted"
         private const val TAG = "MainActivity"
     }
 }

@@ -3,6 +3,14 @@ package com.example.lcb.app
 import android.app.Application
 import com.blankj.utilcode.util.LogUtils
 import com.example.lcb.app.ad.LcbAdInitializer
+import com.example.lcb.app.artist.ArtistActivity
+import com.example.lcb.app.library.PlaylistActivity
+import com.example.lcb.app.localmusic.LocalMusicActivity
+import com.example.lcb.app.player.PlayerActivity
+import com.example.lcb.app.recommended.RecommendedMusicActivity
+import com.example.lcb.app.search.SearchActivity
+import com.example.lcb.app.settings.SettingsActivity
+import com.example.lcb.app.trackactions.DeviceTrackDeletionActivity
 import com.example.lcb.app.utils.BusinessAdPolicy
 import net.corekit.metrics.adjust.AdjustTracker
 
@@ -52,5 +60,15 @@ internal class LcbAppDelegate(
 
     fun launcherActivityClass(): Class<*> = MainActivity::class.java
 
-    fun protectedActivityClasses(): List<Class<*>> = listOf(MainActivity::class.java)
+    fun protectedActivityClasses(): List<Class<*>> = listOf(
+        MainActivity::class.java,
+        PlayerActivity::class.java,
+        SearchActivity::class.java,
+        RecommendedMusicActivity::class.java,
+        PlaylistActivity::class.java,
+        ArtistActivity::class.java,
+        LocalMusicActivity::class.java,
+        SettingsActivity::class.java,
+        DeviceTrackDeletionActivity::class.java
+    )
 }

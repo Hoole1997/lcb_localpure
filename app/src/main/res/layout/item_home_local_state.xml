@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginBottom="16dp"
+    android:background="@drawable/bg_home_shortcut_neutral"
+    android:gravity="center"
+    android:minHeight="144dp"
+    android:orientation="vertical"
+    android:padding="22dp">
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/loading"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:visibility="gone"
+        app:indicatorColor="#F2FFFFFF"
+        app:trackColor="#28FFFFFF"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#F2FFFFFF"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        tools:text="Access your music" />
+
+    <TextView
+        android:id="@+id/message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp"
+        android:maxLines="3"
+        android:textColor="#A6FFFFFF"
+        android:textSize="14sp"
+        tools:text="Allow access to music stored on this device." />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/action"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="42dp"
+        android:layout_marginTop="16dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="116dp"
+        android:paddingHorizontal="18dp"
+        android:textAllCaps="false"
+        android:textColor="#FF241A2E"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:backgroundTint="#F2FFFFFF"
+        app:cornerRadius="21dp"
+        tools:text="Allow access"
+        tools:visibility="visible" />
+
+</LinearLayout>

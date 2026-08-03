@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.lcb.app.R
 import com.example.lcb.app.analytics.MusicAnalytics
+import com.example.lcb.app.localmusic.LocalMusicIdentity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -194,7 +195,7 @@ class DeviceTrackDeletionActivity : AppCompatActivity() {
     }
 
     private fun Intent.toDeleteRequest(): DeleteRequest? {
-        getStringExtra(EXTRA_TRACK_ID)?.takeIf { it.startsWith(LOCAL_TRACK_ID_PREFIX) } ?: return null
+        getStringExtra(EXTRA_TRACK_ID)?.takeIf(LocalMusicIdentity::matches) ?: return null
         val title = getStringExtra(EXTRA_TRACK_TITLE)?.takeIf(String::isNotBlank) ?: return null
         val uri = getStringExtra(EXTRA_CONTENT_URI)?.let(Uri::parse) ?: return null
         if (uri.scheme != CONTENT_RESOLVER_SCHEME || uri.authority != MediaStore.AUTHORITY) return null
@@ -218,7 +219,6 @@ class DeviceTrackDeletionActivity : AppCompatActivity() {
         private const val STATE_AWAITING_LEGACY_PERMISSION = "device_delete.awaiting_legacy_permission"
         private const val STATE_RETRIED_AFTER_CONSENT = "device_delete.retried"
         private const val STATE_LEGACY_CONFIRMED = "device_delete.legacy_confirmed"
-        private const val LOCAL_TRACK_ID_PREFIX = "LOCAL:"
         private const val CONTENT_RESOLVER_SCHEME = "content"
 
         internal fun open(

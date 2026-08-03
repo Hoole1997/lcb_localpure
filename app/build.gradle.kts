@@ -1,3 +1,6 @@
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Properties
 
 plugins {
@@ -48,6 +51,14 @@ fun booleanGradleProperty(name: String, defaultValue: Boolean): Boolean {
 fun secretValue(name: String): String {
     return rootProject.findProperty(name)?.toString()?.trim()?.takeIf { it.isNotEmpty() }
         ?: System.getenv(name)?.trim().orEmpty()
+}
+
+/** Converts project metadata into a portable artifact file-name segment. */
+fun String.toArtifactNameSegment(fallback: String): String {
+    return trim()
+        .replace(Regex("[^A-Za-z0-9._-]+"), "_")
+        .trim('_', '.', '-')
+        .ifEmpty { fallback }
 }
 
 val localProperties = Properties().apply {
@@ -103,11 +114,22 @@ val hasGoogleReleaseSigning = googleReleaseKeystoreFile.isFile &&
     googleReleaseStorePassword.isNotEmpty() &&
     googleReleaseKeyAlias.isNotEmpty() &&
     googleReleaseKeyPassword.isNotEmpty()
+val googleReleaseArtifactTaskPrefixes = listOf("assemble", "bundle", "package", "publish")
 val requiresGoogleReleaseSigning = gradle.startParameter.taskNames.any { taskName ->
-    val lowerTaskName = taskName.lowercase()
-    lowerTaskName.contains("google") && lowerTaskName.contains("release")
+    val simpleTaskName = taskName.substringAfterLast(':').lowercase()
+    // Metadata helper tasks mention GoogleRelease but do not produce a signed artifact.
+    simpleTaskName.contains("googlerelease") &&
+        googleReleaseArtifactTaskPrefixes.any(simpleTaskName::startsWith)
 }
-val googleReleaseAabName = "lcb_template_release_$resolvedVersionName.aab"
+val artifactProjectName = rootProject.name.toArtifactNameSegment("android_app")
+val artifactVersionName = resolvedVersionName.toArtifactNameSegment("unknown")
+// UTC keeps artifact names unambiguous across local machines and GitHub-hosted runners.
+val artifactTimestampUtc = DateTimeFormatter
+    .ofPattern("yyyyMMdd_HHmmss")
+    .withZone(ZoneOffset.UTC)
+    .format(Instant.now())
+val googleReleaseAabName =
+    "${artifactProjectName}_google_release_v${artifactVersionName}_${artifactTimestampUtc}_UTC.aab"
 val releaseMinifyEnabled = booleanGradleProperty("android.release.minifyEnabled", true)
 val releaseShrinkResourcesEnabled = booleanGradleProperty("android.release.shrinkResourcesEnabled", false)
 val releaseOptimizeEnabled = booleanGradleProperty("android.release.optimizeEnabled", releaseMinifyEnabled)
@@ -322,6 +344,6 @@ dependencies {
         exclude(group = "com.ironsource.sdk", module = "mediationsdk")
     }
     // 两个 Launcher SDK 含有相同包名的混淆类，必须按渠道隔离，不能同时进入一个 variant。
-    add("googleImplementation", "com.launcher.unity:com.leafmotivation.quizguessoncolor-RemoteControl:1.0.1")
+    add("googleImplementation", "com.launcher.unity:com.sonicpure.local.audio.tool-LocalPure:1.0.0")
     add("localImplementation", "com.launcher.unity:com.leafmotivation.quizguessoncolor-LocalPure:1.0.0")
 }

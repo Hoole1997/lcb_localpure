@@ -6,17 +6,17 @@ import org.junit.Test
 
 class MusicRemoteCredentialsParserTest {
     @Test
-    fun `parses json credentials and keeps api bearer pairing`() {
+    fun `parses unified sdk config and keeps api bearer pairing`() {
         val patch = MusicRemoteCredentialsParser.parse(
-            jamendoRaw = "[\"jamendo-a\", \"jamendo-b\"]",
-            audiusCredentialsRaw = """
-                [
-                  {"apiKey":"api-a","bearerToken":"Bearer token-a"},
-                  {"apiKey":"api-b","bearerToken":"token-b"}
-                ]
+            """
+                {
+                  "jamendoClientIds": ["jamendo-a", "jamendo-b"],
+                  "audiusCredentials": [
+                    {"apiKey":"api-a","bearerToken":"Bearer token-a"},
+                    {"apiKey":"api-b","bearerToken":"token-b"}
+                  ]
+                }
             """.trimIndent(),
-            legacyAudiusApiKeysRaw = null,
-            legacyAudiusBearerTokensRaw = null,
         )
 
         assertEquals(listOf("jamendo-a", "jamendo-b"), patch.jamendoClientIds)
@@ -25,38 +25,37 @@ class MusicRemoteCredentialsParserTest {
     }
 
     @Test
-    fun `legacy lists pair values by index`() {
+    fun `missing platform field keeps its current credentials`() {
         val patch = MusicRemoteCredentialsParser.parse(
-            jamendoRaw = "jamendo-a, jamendo-b",
-            audiusCredentialsRaw = null,
-            legacyAudiusApiKeysRaw = "api-a,api-b",
-            legacyAudiusBearerTokensRaw = "token-a,token-b",
+            """{"jamendoClientIds":["jamendo-a"]}""",
         )
 
-        assertEquals(listOf("jamendo-a", "jamendo-b"), patch.jamendoClientIds)
-        assertEquals("token-b", patch.audiusCredentials?.get(1)?.bearerToken)
-    }
-
-    @Test
-    fun `malformed remote values do not erase current credentials`() {
-        val patch = MusicRemoteCredentialsParser.parse(
-            jamendoRaw = "[invalid",
-            audiusCredentialsRaw = "[{\"bearerToken\":\"missing-api\"}]",
-            legacyAudiusApiKeysRaw = null,
-            legacyAudiusBearerTokensRaw = null,
-        )
-
-        assertNull(patch.jamendoClientIds)
+        assertEquals(listOf("jamendo-a"), patch.jamendoClientIds)
         assertNull(patch.audiusCredentials)
     }
 
     @Test
-    fun `explicit empty arrays disable a platform`() {
+    fun `malformed config does not erase current credentials`() {
+        val malformedRoot = MusicRemoteCredentialsParser.parse("[invalid")
+        val malformedFields = MusicRemoteCredentialsParser.parse(
+            """
+                {
+                  "jamendoClientIds": "not-an-array",
+                  "audiusCredentials": [{"bearerToken":"missing-api"}]
+                }
+            """.trimIndent(),
+        )
+
+        assertNull(malformedRoot.jamendoClientIds)
+        assertNull(malformedRoot.audiusCredentials)
+        assertNull(malformedFields.jamendoClientIds)
+        assertNull(malformedFields.audiusCredentials)
+    }
+
+    @Test
+    fun `explicit empty arrays disable both platforms`() {
         val patch = MusicRemoteCredentialsParser.parse(
-            jamendoRaw = "[]",
-            audiusCredentialsRaw = "[]",
-            legacyAudiusApiKeysRaw = null,
-            legacyAudiusBearerTokensRaw = null,
+            """{"jamendoClientIds":[],"audiusCredentials":[]}""",
         )
 
         assertEquals(emptyList<String>(), patch.jamendoClientIds)

@@ -1,13 +1,10 @@
 package com.example.lcb.app.localmusic
 
-import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
@@ -15,7 +12,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -463,22 +459,13 @@ class LocalMusicActivity : AppCompatActivity() {
 
     private fun requestMediaPermission() {
         permissionRequestAttempted = true
-        permissionLauncher.launch(requiredMediaPermission())
+        permissionLauncher.launch(LocalMediaPermission.requiredPermission())
     }
 
-    private fun mustOpenSettings(): Boolean = permissionRequestAttempted &&
-        !ActivityCompat.shouldShowRequestPermissionRationale(this, requiredMediaPermission())
+    private fun mustOpenSettings(): Boolean =
+        LocalMediaPermission.shouldOpenSettings(this, permissionRequestAttempted)
 
-    private fun hasMediaPermission(): Boolean = ContextCompat.checkSelfPermission(
-        this,
-        requiredMediaPermission(),
-    ) == PackageManager.PERMISSION_GRANTED
-
-    private fun requiredMediaPermission(): String = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_AUDIO
-    } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    }
+    private fun hasMediaPermission(): Boolean = LocalMediaPermission.isGranted(this)
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
