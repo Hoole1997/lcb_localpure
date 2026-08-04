@@ -27,7 +27,7 @@ internal object MusicDependencies {
             checkNotNull(sdkInstance) { "MusicSdk initialization failed" }
         }
 
-    /** 使用 BuildConfig 中由 local.properties/CI 注入的本地兜底凭据初始化。 */
+    /** 使用 Gradle 写入 BuildConfig 的内置兜底凭据初始化，Remote Config 可在运行时热更新。 */
     fun initialize() {
         synchronized(lock) {
             if (sdkInstance != null) return
@@ -75,6 +75,6 @@ internal object MusicDependencies {
     }
 }
 
-/** 支持在 local.properties 或 CI 环境变量中用英文逗号配置多个值。 */
+/** Gradle 内置值和可选 CI 覆盖值均使用英文逗号配置多个凭据。 */
 private fun String.toCredentialList(): List<String> =
     split(',').map(String::trim).filter(String::isNotEmpty).distinct()

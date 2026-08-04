@@ -1,7 +1,6 @@
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -61,15 +60,19 @@ fun String.toArtifactNameSegment(fallback: String): String {
         .ifEmpty { fallback }
 }
 
-val localProperties = Properties().apply {
-    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use { stream ->
-        load(stream)
-    }
-}
+/**
+ * 客户端音乐平台凭据会随 APK/AAB 分发，本质上可被提取；这里作为 Remote Config 未下发时的
+ * 可用性兜底。CI 同名环境变量仍可覆盖内置值，便于密钥轮换而无需修改业务代码。
+ */
+val builtInMusicJamendoClientIds = "617fcfac,20b76c90"
+val builtInMusicAudiusApiKeys =
+    "c53b3d1db49ff769804066f25b888bd357e834c4,707211e30a70f8c6f31d396d3cdff01069399fd7"
+val builtInMusicAudiusBearerTokens =
+    "EjrggU1WfiJnQS1Ivn9PJEOkFnZvcmOmOo-r2kwtlOI=,x0EOhgSCurVAb2rRSVHDb6H2FdhHcNU9NNVO3JqijbA="
 
-fun musicCredential(name: String): String =
+fun musicCredential(name: String, builtInValue: String): String =
     providers.environmentVariable(name).orNull?.trim()?.takeIf(String::isNotEmpty)
-        ?: localProperties.getProperty(name)?.trim().orEmpty()
+        ?: builtInValue
 
 fun buildConfigString(value: String): String =
     "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
@@ -153,10 +156,21 @@ android {
 
         val defaultChannel = analyticsConfig.stringValue("defaultUserChannel", "default")
         buildConfigField("String", "DEFAULT_USER_CHANNEL", "\"$defaultChannel\"")
-        // 仅从 local.properties/CI 注入，避免把凭据硬编码到受版本控制的源码。
-        buildConfigField("String", "MUSIC_JAMENDO_CLIENT_IDS", buildConfigString(musicCredential("MUSIC_JAMENDO_CLIENT_IDS")))
-        buildConfigField("String", "MUSIC_AUDIUS_API_KEYS", buildConfigString(musicCredential("MUSIC_AUDIUS_API_KEYS")))
-        buildConfigField("String", "MUSIC_AUDIUS_BEARER_TOKENS", buildConfigString(musicCredential("MUSIC_AUDIUS_BEARER_TOKENS")))
+        buildConfigField(
+            "String",
+            "MUSIC_JAMENDO_CLIENT_IDS",
+            buildConfigString(musicCredential("MUSIC_JAMENDO_CLIENT_IDS", builtInMusicJamendoClientIds)),
+        )
+        buildConfigField(
+            "String",
+            "MUSIC_AUDIUS_API_KEYS",
+            buildConfigString(musicCredential("MUSIC_AUDIUS_API_KEYS", builtInMusicAudiusApiKeys)),
+        )
+        buildConfigField(
+            "String",
+            "MUSIC_AUDIUS_BEARER_TOKENS",
+            buildConfigString(musicCredential("MUSIC_AUDIUS_BEARER_TOKENS", builtInMusicAudiusBearerTokens)),
+        )
         buildConfigField("String", "PRIVACY_POLICY_URL", buildConfigString(legalConfig.stringValue("privacyPolicyUrl")))
         buildConfigField("String", "TERMS_OF_SERVICE_URL", buildConfigString(legalConfig.stringValue("termsOfServiceUrl")))
 
