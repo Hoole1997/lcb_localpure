@@ -25,6 +25,7 @@ interface HomeCallbacks {
     fun onTrackMore(track: HomeTrackUi)
     fun onShortcutClick(shortcut: HomeShortcutUi)
     fun onLocalStateAction(action: HomeLocalStateAction)
+    fun onHomeRetry()
 }
 
 /**
@@ -42,6 +43,7 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
         is HomeListItem.SectionTitle -> TYPE_SECTION
         is HomeListItem.Recommended -> TYPE_RECOMMENDED
         is HomeListItem.MostPlayed -> TYPE_MOST_PLAYED
+        is HomeListItem.LoadError -> TYPE_LOAD_ERROR
         is HomeListItem.Shortcuts -> TYPE_SHORTCUTS
         is HomeListItem.LocalState -> TYPE_LOCAL_STATE
         is HomeListItem.LocalTrack -> TYPE_TRACK
@@ -61,6 +63,7 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
             TYPE_MOST_PLAYED_SKELETON -> SkeletonHolder(
                 inflater.inflate(R.layout.item_home_most_played_skeleton, parent, false),
             )
+            TYPE_LOAD_ERROR -> LoadErrorHolder(ItemHomeLoadErrorBinding.inflate(inflater, parent, false))
             TYPE_SHORTCUTS -> ShortcutsHolder(ItemHomeShortcutsBinding.inflate(inflater, parent, false))
             TYPE_LOCAL_STATE -> LocalStateHolder(ItemHomeLocalStateBinding.inflate(inflater, parent, false))
             else -> TrackHolder(ItemHomeTrackBinding.inflate(inflater, parent, false))
@@ -86,6 +89,7 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
             holder is SectionHolder && item is HomeListItem.SectionTitle -> holder.bind(item)
             holder is RecommendedHolder && item is HomeListItem.Recommended -> holder.bind(item)
             holder is MostPlayedHolder && item is HomeListItem.MostPlayed -> holder.bind(item)
+            holder is LoadErrorHolder && item is HomeListItem.LoadError -> holder.bind(item)
             holder is ShortcutsHolder && item is HomeListItem.Shortcuts -> holder.bind(item)
             holder is LocalStateHolder && item is HomeListItem.LocalState -> holder.bind(item)
             holder is TrackHolder && item is HomeListItem.LocalTrack -> holder.bind(item.track, TrackSource.LOCAL)
@@ -159,6 +163,15 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
                     View.OnClickListener { callbacks.onLocalStateAction(action) }
                 },
             )
+        }
+    }
+
+    private inner class LoadErrorHolder(
+        private val binding: ItemHomeLoadErrorBinding,
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(item: HomeListItem.LoadError) {
+            binding.message.setText(item.error.messageRes)
+            binding.retry.setOnClickListener { callbacks.onHomeRetry() }
         }
     }
 
@@ -378,6 +391,7 @@ class HomeAdapter(private val callbacks: HomeCallbacks) : ListAdapter<HomeListIt
         const val TYPE_RECOMMENDED_SKELETON = 7
         const val TYPE_MOST_PLAYED_SKELETON = 8
         const val TYPE_LOCAL_STATE = 9
+        const val TYPE_LOAD_ERROR = 10
     }
 
     private enum class TrackSource { LOCAL, RECENT }

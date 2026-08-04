@@ -72,6 +72,8 @@ sealed interface HomeListItem {
     }
     data class Recommended(val groups: List<List<HomeTrackUi>>) : HomeListItem { override val stableId = 10L }
     data class MostPlayed(val tracks: List<HomeTrackUi>) : HomeListItem { override val stableId = 20L }
+    /** 在线首页首屏加载失败状态；作为列表 item 参与 Diff 更新，不使用覆盖层。 */
+    data class LoadError(val error: AppLoadError) : HomeListItem { override val stableId = 12L }
     data class Shortcuts(val items: List<HomeShortcutUi>) : HomeListItem { override val stableId = 30L }
     data class LocalState(
         @param:StringRes val titleRes: Int? = null,

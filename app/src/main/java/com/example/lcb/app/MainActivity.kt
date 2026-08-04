@@ -39,7 +39,6 @@ import com.example.lcb.app.player.toPlayerTrackQueue
 import com.example.lcb.app.trackactions.TrackActionUiModel
 import com.example.lcb.app.trackactions.TrackActionsController
 import com.example.lcb.app.settings.SettingsActivity
-import com.example.lcb.app.ui.AppLoadError
 import com.example.lcb.app.utils.BottomNativeAdController
 import com.example.lcb.app.utils.BusinessAdSwitchKey
 import com.example.lcb.app.utils.InterstitialAdPlacement
@@ -60,7 +59,6 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
     private var initialVisibilityHandled = false
     private var homeModeRefreshJob: Job? = null
     private var modeRestartInProgress = false
-    private var displayedError: AppLoadError? = null
     private val libraryRepository by lazy(LazyThreadSafetyMode.NONE) {
         MusicLibraryDependencies.repository(this)
     }
@@ -265,7 +263,6 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
                     // submitList 使用 AsyncListDiffer，差异计算不会阻塞主线程。
                     homeAdapter.submitList(state.items)
                     renderMiniPlayer(state.miniPlayer)
-                    renderLoadError(state.loadError)
                     if (
                         state.canRequestBottomAd &&
                         AdSlotSwitchController.isEnabled(BusinessAdSwitchKey.HOME_BOTTOM_NATIVE)
@@ -274,17 +271,6 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
                     }
                 }
             }
-        }
-    }
-
-    private fun renderLoadError(error: AppLoadError?) {
-        if (error == null) {
-            displayedError = null
-            return
-        }
-        if (displayedError != error) {
-            displayedError = error
-            toast(getString(error.messageRes))
         }
     }
 
@@ -423,6 +409,10 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
             }
             HomeLocalStateAction.RETRY -> viewModel.refresh()
         }
+    }
+
+    override fun onHomeRetry() {
+        viewModel.refresh()
     }
 
     private fun requestLocalMediaPermission() {

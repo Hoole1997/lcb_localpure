@@ -1,6 +1,7 @@
 package com.example.lcb.app.home
 
 import com.example.lcb.app.R
+import com.example.lcb.app.ui.AppLoadError
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -93,6 +94,52 @@ class HomeExperienceModeTest {
         assertTrue(items.any { it is HomeListItem.Recommended })
         assertTrue(items.any { it is HomeListItem.MostPlayed })
         assertFalse(items.any { it is HomeListItem.LocalTrack })
+    }
+
+    @Test
+    fun `online initial failure renders retry item instead of loading skeletons`() {
+        val items = buildHomeItems(
+            mode = HomeExperienceMode.ONLINE,
+            content = HomeContent(),
+            isOnlineLoading = false,
+            onlineError = AppLoadError.HOME,
+        )
+
+        assertEquals(AppLoadError.HOME, items.filterIsInstance<HomeListItem.LoadError>().single().error)
+        assertFalse(items.any { it is HomeListItem.RecommendedSkeleton })
+        assertFalse(items.any { it is HomeListItem.MostPlayedSkeleton })
+    }
+
+    @Test
+    fun `online retry replaces failure item with loading skeletons`() {
+        val items = buildHomeItems(
+            mode = HomeExperienceMode.ONLINE,
+            content = HomeContent(),
+            isOnlineLoading = true,
+            // StateFlow emissions may briefly retain the previous error while loading turns true.
+            onlineError = AppLoadError.HOME,
+        )
+
+        assertFalse(items.any { it is HomeListItem.LoadError })
+        assertTrue(items.any { it is HomeListItem.RecommendedSkeleton })
+        assertTrue(items.any { it is HomeListItem.MostPlayedSkeleton })
+    }
+
+    @Test
+    fun `online refresh failure keeps already loaded music visible`() {
+        val items = buildHomeItems(
+            mode = HomeExperienceMode.ONLINE,
+            content = HomeContent(
+                recommended = listOf(track("AUDIUS:1")),
+                mostPlayed = listOf(track("JAMENDO:1")),
+            ),
+            isOnlineLoading = false,
+            onlineError = AppLoadError.HOME,
+        )
+
+        assertFalse(items.any { it is HomeListItem.LoadError })
+        assertTrue(items.any { it is HomeListItem.Recommended })
+        assertTrue(items.any { it is HomeListItem.MostPlayed })
     }
 
     private fun track(id: String) = HomeTrackUi(

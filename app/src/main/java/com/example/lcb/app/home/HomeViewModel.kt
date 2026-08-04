@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.lcb.app.R
 import com.example.lcb.app.ui.AppLoadError
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -19,6 +21,7 @@ class HomeViewModel(
     private val playback = MutableStateFlow<PlaybackSnapshot?>(null)
     private val loading = MutableStateFlow(mode == HomeExperienceMode.ONLINE)
     private val loadError = MutableStateFlow<AppLoadError?>(null)
+    private var refreshJob: Job? = null
 
     val uiState = combine(repository.content, playback, loading, loadError) { content, snapshot, isLoading, error ->
         val renderedContent = content.withPlayback(
@@ -28,7 +31,7 @@ class HomeViewModel(
         val localLoading = renderedContent.localMusic is LocalHomeMusicState.Loading
         HomeUiState(
             mode = mode,
-            items = buildHomeItems(mode, renderedContent, isLoading),
+            items = buildHomeItems(mode, renderedContent, isLoading, error),
             miniPlayer = snapshot?.let { MiniPlayerUi(it.track, it.isPlaying) },
             isLoading = if (mode == HomeExperienceMode.LOCAL) localLoading else isLoading,
             loadError = error.takeIf { mode == HomeExperienceMode.ONLINE },
@@ -48,16 +51,22 @@ class HomeViewModel(
     }
 
     fun refresh() {
-        viewModelScope.launch {
+        // 错误 item 在状态切换前可能被快速连点，单飞请求避免重复消耗平台 Key。
+        if (refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.launch {
             if (mode == HomeExperienceMode.ONLINE) {
                 loading.value = true
                 loadError.value = null
             }
-            runCatching { repository.refresh() }
-                .onFailure {
-                    if (mode == HomeExperienceMode.ONLINE) loadError.value = AppLoadError.HOME
-                }
-            if (mode == HomeExperienceMode.ONLINE) loading.value = false
+            try {
+                repository.refresh()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Throwable) {
+                if (mode == HomeExperienceMode.ONLINE) loadError.value = AppLoadError.HOME
+            } finally {
+                if (mode == HomeExperienceMode.ONLINE) loading.value = false
+            }
         }
     }
 
@@ -104,11 +113,12 @@ internal fun buildHomeItems(
     mode: HomeExperienceMode,
     content: HomeContent,
     isOnlineLoading: Boolean,
+    onlineError: AppLoadError? = null,
 ): List<HomeListItem> = buildList {
     add(HomeListItem.Header(showSearch = mode == HomeExperienceMode.ONLINE))
     when (mode) {
         HomeExperienceMode.LOCAL -> addLocalHomeItems(content.localMusic)
-        HomeExperienceMode.ONLINE -> addOnlineHomeItems(content, isOnlineLoading)
+        HomeExperienceMode.ONLINE -> addOnlineHomeItems(content, isOnlineLoading, onlineError)
     }
     add(HomeListItem.SectionTitle(HomeSectionId.MY_PLAYLIST, R.string.home_section_my_playlist))
     add(HomeListItem.Shortcuts(content.shortcuts))
@@ -122,7 +132,16 @@ internal fun buildHomeItems(
     addAll(content.recentlyPlayed.map(HomeListItem::RecentTrack))
 }
 
-private fun MutableList<HomeListItem>.addOnlineHomeItems(content: HomeContent, isLoading: Boolean) {
+private fun MutableList<HomeListItem>.addOnlineHomeItems(
+    content: HomeContent,
+    isLoading: Boolean,
+    error: AppLoadError?,
+) {
+    val hasRemoteContent = content.recommended.isNotEmpty() || content.mostPlayed.isNotEmpty()
+    if (!isLoading && !hasRemoteContent && error != null) {
+        add(HomeListItem.LoadError(error))
+        return
+    }
     if (content.recommended.isNotEmpty() || isLoading) {
         add(
             HomeListItem.SectionTitle(
