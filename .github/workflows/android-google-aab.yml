@@ -60,6 +60,18 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # Chartboost Mediation 5.3.0 的 consumer ProGuard 文件错误携带 -printmapping，
+          # R8 会把 mapping 写回 immutable transform。依赖与 wrapper 继续缓存，但 transform
+          # 必须在每个 Job 内重新生成，避免污染后的目录被保存并恢复到下一次构建。
+          gradle-home-cache-excludes: |
+            caches/*/transforms
+            caches/*/transforms/**
+
+      - name: Remove restored Gradle transform workspaces
+        shell: bash
+        # 清理历史 Actions cache 已恢复的损坏目录；脚本带路径边界校验，不触碰依赖和 wrapper。
+        run: bash scripts/clean-gradle-transform-cache.sh
 
       - name: Ensure google release keystore exists
         id: ensure_keystore
@@ -220,3 +232,9 @@ jobs:
           path: ${{ steps.rename_aab.outputs.target_aab }}
           if-no-files-found: error
           retention-days: 30
+
+      - name: Remove R8-polluted Gradle transform workspaces
+        if: always()
+        shell: bash
+        # setup-gradle 的 post action 保存缓存前再次清理；构建失败时也必须执行。
+        run: bash scripts/clean-gradle-transform-cache.sh
