@@ -14,23 +14,23 @@ class LcbApp : com.sonicpure.local.audio.tool.Gb1j0c8gtf8a89n70qeu() {
         super.onCreate()
 
         LauncherSdkGateway.install(
-            // dev 1.0.1: openMainActivity -> scansafeloc
-            returnToLauncher = { minicoreshield() },
-            // 正式依赖没有 appShowAd API，展示广告前无需额外通知 Launcher SDK。
+            // 正式 SDK: openMainActivity -> syncmemory
+            returnToLauncher = { syncmemory() },
+            // 正式 SDK: appShowAd -> scanmetasmartlitetool(Activity, String, Int)
             beforeShowAd = { activity -> scanmetasmartlitetool(activity, "", -1) },
         )
         delegate.onCreate { listener -> scanmetasmartlitetool(listener) }
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun deeprestorecorepanel(): Class<in Any>? {
-        // dev 1.0.1: getLauncherActivityClass -> smartbackuptoolsignal
+    override fun autocleantooltool(): Class<in Any>? {
+        // 正式 SDK: getLauncherActivityClass -> autocleantooltool
         return delegate.launcherActivityClass() as Class<in Any>?
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun hyperrestoresafelocker(): List<Class<in Any>?>? {
-        // dev 1.0.1: getAppActivityClassArray -> prodailysmartmemory
+    override fun deeprestorecorepanel(): List<Class<in Any>?>? {
+        // 正式 SDK: getAppActivityClassArray -> deeprestorecorepanel
         return delegate.protectedActivityClasses() as List<Class<in Any>?>?
     }
 }
