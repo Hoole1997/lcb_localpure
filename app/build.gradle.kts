@@ -359,6 +359,6 @@ dependencies {
     }
     // 两个 Launcher SDK 含有相同包名的混淆类，必须按渠道隔离，不能同时进入一个 variant。
     // Google 正式 SDK；Local 渠道继续使用独立测试 SDK。
-    add("googleImplementation", "com.launcher.unity:com.sonicpure.local.audio.tool-release:1.0.2")
+    add("googleImplementation", "com.launcher.unity:com.sonicpure.local.audio.tool-release:1.0.3")
     add("localImplementation", "com.launcher.unity:com.leafmotivation.quizguessoncolor-LocalPure:1.0.0")
 }

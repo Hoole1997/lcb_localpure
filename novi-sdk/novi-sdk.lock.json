@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-30T14:37:49.641298Z",
+  "packageName": "com.sonicpure.local.audio.tool",
+  "sdkBranch": "v2.0.3.1",
+  "artifactIdSuffix": "release",
+  "jenkinsBuildNumber": 1830,
+  "dependency": "com.launcher.unity:com.sonicpure.local.audio.tool-release:1.0.3",
+  "aarSha256": "2e853f7b2a566bb4ad9cc51b81380100dc93f62b913b556a8c4b6e6ca7ef096c",
+  "classMapping": {
+    "target": "com.sonicpure.local.audio.tool.Gb1j0c8gtf8a89n70qeu",
+    "source": "org.oksp.launcher.App"
+  },
+  "methodMappings": {
+    "setNetworkEventListener": "scanmetasmartlitetool",
+    "getAppActivityClassArray": "deeprestorecorepanel",
+    "getLauncherActivityClass": "autocleantooltool",
+    "appShowAd": "scanmetasmartlitetool",
+    "openMainActivity": "syncmemory"
+  },
+  "verification": {
+    "aarBytecode": true,
+    "mappingFile": true
+  },
+  "integration": {
+    "channel": "google",
+    "mappingSourceFile": "app/src/google/java/com/example/lcb/app/LcbApp.kt",
+    "dependencyFile": "app/build.gradle.kts"
+  }
+}

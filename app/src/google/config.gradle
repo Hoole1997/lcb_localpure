@@ -54,8 +54,8 @@ ext {
            compileSdk   : 36,
            minSdk       : 26,
            targetSdk    : 36,
-           versionCode  : 4,
-           versionName  : "1.0.3"]
+           versionCode  : 5,
+           versionName  : "1.0.4"]
 
     // 设置页法律链接集中配置，业务层不会硬编码站点地址。
     legal = [privacyPolicyUrl : "https://metazymorphism.com/privacy.html",
