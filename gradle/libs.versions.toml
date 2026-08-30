@@ -211,8 +211,8 @@ glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "gl
 glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
 
 # ReMax SDK
-remax-core = { group = "com.github.toukaremax", name = "core", version = "1.0.9" }
-remax-bill = { group = "com.github.toukaremax", name = "bill", version = "useOldAdmob_removeMax_1.5" }
+remax-core = { group = "com.github.toukaremax", name = "core", version = "1.0.15" }
+remax-bill = { group = "com.github.toukaremax", name = "bill", version = "1.0.51" }
 
 [bundles]
 accompanist = ["accompanist-adaptive", "accompanist-drawablepainter", "accompanist-permissions"]

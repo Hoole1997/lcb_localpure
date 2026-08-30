@@ -3,7 +3,7 @@ package com.example.lcb.app
 /**
  * Google 正式渠道的 Launcher Application 适配层。
  *
- * 本类只维护 quizguessoncolor-dev 1.0.1 的 pre-R8 API 映射；公共初始化由 [LcbAppDelegate]
+ * 本类只维护正式 SDK 的 pre-R8 API 映射；公共初始化由 [LcbAppDelegate]
  * 负责，避免正式渠道与 Local 测试渠道的混淆符号相互污染。
  */
 class LcbApp : com.sonicpure.local.audio.tool.Gb1j0c8gtf8a89n70qeu() {

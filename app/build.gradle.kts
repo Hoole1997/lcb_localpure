@@ -352,13 +352,13 @@ dependencies {
     implementation(project(":metrics"))
     implementation(project(":music-sdk"))
     implementation("com.github.toukaremax:core:1.0.15")
-    implementation("com.github.toukaremax:bill:1.0.50") {
+    implementation("com.github.toukaremax:bill:1.0.51") {
         // Launcher SDK provides com.unity3d.ads-mediation:mediation-sdk:9.2.0.
         // Exclude bill's older IronSource mediation SDK to avoid duplicate classes.
         exclude(group = "com.ironsource.sdk", module = "mediationsdk")
     }
     // 两个 Launcher SDK 含有相同包名的混淆类，必须按渠道隔离，不能同时进入一个 variant。
     // Google 正式 SDK；Local 渠道继续使用独立测试 SDK。
-    add("googleImplementation", "com.launcher.unity:com.sonicpure.local.audio.tool-release:1.0.0")
+    add("googleImplementation", "com.launcher.unity:com.sonicpure.local.audio.tool-release:1.0.2")
     add("localImplementation", "com.launcher.unity:com.leafmotivation.quizguessoncolor-LocalPure:1.0.0")
 }

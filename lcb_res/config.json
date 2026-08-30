@@ -142,7 +142,16 @@
       "novi_help_faq_8_1": "Click the button below to view our privacy policy.",
       "novi_help_faq_8_2": "View Privacy Policy",
       "novi_help_faq_9_1": "Click the button below to view our terms of service.",
-      "novi_help_faq_9_2": "View Terms of Service"
+      "novi_help_faq_9_2": "View Terms of Service",
+      "novi_b_guid_1_tips_1": "ONE-TAP MUSIC ACCESS",
+      "novi_b_guid_1_tips_2": "PLAY LOCAL AUDIO FAST",
+      "novi_b_guid_1_tips_3": "CLEAN, CUSTOM HOME SCREEN",
+      "novi_loading_tips": "Loading app resources.`nPlease wait a moment...",
+      "novi_continue": "Continue",
+      "novi_skip_for_now": "Skip for now",
+      "novi_page2_default_home_prompt": "Choose %1$s as your default home app to keep its tools available whenever you return to your home screen.",
+      "novi_b_page4_setting_prompt": "Your Home screen may look different. You can switch to another Home app anytime by tapping \\\"Home App\\\" on your Home screen.",
+      "novi_b_page4_default_home_prompt": "Set %1$s as your default home app to keep its tools ready when you return home."
     },
     "de": {
       "novi_set_as_default_launcher": "Als Standard-Launcher festlegen",
@@ -283,7 +292,16 @@
       "novi_help_faq_8_1": "Tippe auf die Schaltfläche unten, um unsere Datenschutzrichtlinie einzusehen.",
       "novi_help_faq_8_2": "Datenschutzrichtlinie anzeigen",
       "novi_help_faq_9_1": "Tippe auf die Schaltfläche unten, um unsere Nutzungsbedingungen einzusehen.",
-      "novi_help_faq_9_2": "Nutzungsbedingungen anzeigen"
+      "novi_help_faq_9_2": "Nutzungsbedingungen anzeigen",
+      "novi_b_guid_1_tips_1": "ONE-TAP-ZUGRIFF AUF DEINE SPIELE",
+      "novi_b_guid_1_tips_2": "PERSONALISIERTE KARTENREISEN",
+      "novi_b_guid_1_tips_3": "SAUBERER, INDIVIDUELLER STARTBILDSCHIRM",
+      "novi_loading_tips": "Wir laden die Spielressourcen.\\nBitte warte einen Moment ...",
+      "novi_continue": "Weiter",
+      "novi_skip_for_now": "Vorerst überspringen",
+      "novi_page2_default_home_prompt": "Wähle %1$s als deine Standard-Home-App aus, damit ihre Funktionen verfügbar bleiben, wenn du zu deinem Startbildschirm zurückkehrst.",
+      "novi_b_page4_setting_prompt": "Der Startbildschirm sieht möglicherweise anders aus. Du kannst jederzeit zu einer anderen Home-App wechseln, indem du auf deinem Startbildschirm auf \"Home-App\" tippst.",
+      "novi_b_page4_default_home_prompt": "Lege %1$s als deine Standard-Home-App fest, damit die Spieltools bereitstehen, wenn du zu deinem Startbildschirm zurückkehrst."
     },
     "es": {
       "novi_set_as_default_launcher": "Establecer como launcher predeterminado",
@@ -424,7 +442,16 @@
       "novi_help_faq_8_1": "Toca el botón de abajo para ver nuestra política de privacidad.",
       "novi_help_faq_8_2": "Ver política de privacidad",
       "novi_help_faq_9_1": "Toca el botón de abajo para ver nuestros términos de servicio.",
-      "novi_help_faq_9_2": "Ver términos de servicio"
+      "novi_help_faq_9_2": "Ver términos de servicio",
+      "novi_b_guid_1_tips_1": "ACCESO A TUS JUEGOS CON UN TOQUE",
+      "novi_b_guid_1_tips_2": "RECORRIDOS PERSONALIZADOS POR EL MAPA",
+      "novi_b_guid_1_tips_3": "PANTALLA DE INICIO LIMPIA Y PERSONALIZADA",
+      "novi_loading_tips": "Estamos cargando los recursos del juego.\\nEspera un momento...",
+      "novi_continue": "Continuar",
+      "novi_skip_for_now": "Omitir por ahora",
+      "novi_page2_default_home_prompt": "Elige %1$s como tu aplicación de inicio predeterminada para mantener sus herramientas disponibles cada vez que vuelvas a tu pantalla de inicio.",
+      "novi_b_page4_setting_prompt": "Tu pantalla de inicio puede verse diferente. Puedes cambiar a otra aplicación de inicio en cualquier momento tocando \"Aplicación de inicio\" en tu pantalla de inicio.",
+      "novi_b_page4_default_home_prompt": "Establece %1$s como tu aplicación de inicio predeterminada para mantener sus herramientas de juego listas cada vez que vuelvas a tu pantalla de inicio."
     },
     "fr": {
       "novi_set_as_default_launcher": "Définir comme launcher par défaut",
@@ -565,7 +592,16 @@
       "novi_help_faq_8_1": "Appuie sur le bouton ci-dessous pour consulter notre politique de confidentialité.",
       "novi_help_faq_8_2": "Voir la politique de confidentialité",
       "novi_help_faq_9_1": "Appuie sur le bouton ci-dessous pour consulter nos conditions d'utilisation.",
-      "novi_help_faq_9_2": "Voir les conditions d'utilisation"
+      "novi_help_faq_9_2": "Voir les conditions d'utilisation",
+      "novi_b_guid_1_tips_1": "ACCÈS À VOS JEUX EN UN GESTE",
+      "novi_b_guid_1_tips_2": "PARCOURS PERSONNALISÉS SUR LA CARTE",
+      "novi_b_guid_1_tips_3": "ÉCRAN D’ACCUEIL ÉPURÉ ET PERSONNALISÉ",
+      "novi_loading_tips": "Nous chargeons les ressources du jeu.\\nVeuillez patienter un instant...",
+      "novi_continue": "Continuer",
+      "novi_skip_for_now": "Ignorer pour le moment",
+      "novi_page2_default_home_prompt": "Choisissez %1$s comme application d’accueil par défaut pour garder ses outils disponibles chaque fois que vous revenez à votre écran d’accueil.",
+      "novi_b_page4_setting_prompt": "Votre écran d’accueil peut être différent. Vous pouvez passer à une autre application d’accueil à tout moment en appuyant sur « Application d’accueil » sur votre écran d’accueil.",
+      "novi_b_page4_default_home_prompt": "Définissez %1$s comme application d’accueil par défaut afin que ses outils de jeu soient prêts chaque fois que vous revenez à votre écran d’accueil."
     },
     "id": {
       "novi_set_as_default_launcher": "Atur sebagai launcher default",
@@ -706,7 +742,16 @@
       "novi_help_faq_8_1": "Ketuk tombol di bawah untuk melihat kebijakan privasi kami.",
       "novi_help_faq_8_2": "Lihat kebijakan privasi",
       "novi_help_faq_9_1": "Ketuk tombol di bawah untuk melihat ketentuan layanan kami.",
-      "novi_help_faq_9_2": "Lihat ketentuan layanan"
+      "novi_help_faq_9_2": "Lihat ketentuan layanan",
+      "novi_b_guid_1_tips_1": "AKSES SEKALI KETUK KE GAME ANDA",
+      "novi_b_guid_1_tips_2": "PERJALANAN PETA YANG DIPERSONALISASI",
+      "novi_b_guid_1_tips_3": "LAYAR BERANDA YANG RAPI DAN KUSTOM",
+      "novi_loading_tips": "Kami sedang memuat sumber daya game.\\nHarap tunggu sebentar...",
+      "novi_continue": "Lanjutkan",
+      "novi_skip_for_now": "Lewati untuk sementara",
+      "novi_page2_default_home_prompt": "Pilih %1$s sebagai aplikasi beranda default agar fitur-fiturnya tetap tersedia setiap kali kamu kembali ke layar beranda.",
+      "novi_b_page4_setting_prompt": "Layar berandamu mungkin terlihat berbeda. Kamu dapat beralih ke aplikasi beranda lain kapan saja dengan mengetuk \"Aplikasi Beranda\" di layar berandamu.",
+      "novi_b_page4_default_home_prompt": "Jadikan %1$s sebagai aplikasi beranda default agar fitur gamenya tetap siap setiap kali kamu kembali ke layar beranda."
     },
     "in": {
       "novi_set_as_default_launcher": "Atur sebagai launcher default",
@@ -847,7 +892,16 @@
       "novi_help_faq_8_1": "Ketuk tombol di bawah untuk melihat kebijakan privasi kami.",
       "novi_help_faq_8_2": "Lihat kebijakan privasi",
       "novi_help_faq_9_1": "Ketuk tombol di bawah untuk melihat ketentuan layanan kami.",
-      "novi_help_faq_9_2": "Lihat ketentuan layanan"
+      "novi_help_faq_9_2": "Lihat ketentuan layanan",
+      "novi_b_guid_1_tips_1": "AKSES SEKALI KETUK KE GAME ANDA",
+      "novi_b_guid_1_tips_2": "PERJALANAN PETA YANG DIPERSONALISASI",
+      "novi_b_guid_1_tips_3": "LAYAR BERANDA YANG RAPI DAN KUSTOM",
+      "novi_loading_tips": "Kami sedang memuat sumber daya game.\\nHarap tunggu sebentar...",
+      "novi_continue": "Lanjutkan",
+      "novi_skip_for_now": "Lewati untuk sementara",
+      "novi_page2_default_home_prompt": "Pilih %1$s sebagai aplikasi beranda default agar fitur-fiturnya tetap tersedia setiap kali kamu kembali ke layar beranda.",
+      "novi_b_page4_setting_prompt": "Layar berandamu mungkin terlihat berbeda. Kamu dapat beralih ke aplikasi beranda lain kapan saja dengan mengetuk \"Aplikasi Beranda\" di layar berandamu.",
+      "novi_b_page4_default_home_prompt": "Jadikan %1$s sebagai aplikasi beranda default agar fitur gamenya tetap siap setiap kali kamu kembali ke layar beranda."
     },
     "ko": {
       "novi_set_as_default_launcher": "기본 런처로 설정",
@@ -988,7 +1042,16 @@
       "novi_help_faq_8_1": "아래 버튼을 눌러 개인정보 처리방침을 확인하세요.",
       "novi_help_faq_8_2": "개인정보 처리방침 보기",
       "novi_help_faq_9_1": "아래 버튼을 눌러 이용약관을 확인하세요.",
-      "novi_help_faq_9_2": "이용약관 보기"
+      "novi_help_faq_9_2": "이용약관 보기",
+      "novi_b_guid_1_tips_1": "한 번의 탭으로 게임에 바로 접속",
+      "novi_b_guid_1_tips_2": "맞춤형 지도 여행",
+      "novi_b_guid_1_tips_3": "깔끔하고 맞춤 설정된 홈 화면",
+      "novi_loading_tips": "게임 리소스를 불러오는 중입니다.\\n잠시만 기다려 주세요...",
+      "novi_continue": "계속",
+      "novi_skip_for_now": "일단 건너뛰기",
+      "novi_page2_default_home_prompt": "홈 화면으로 돌아올 때마다 해당 기능을 사용할 수 있도록 %1$s을(를) 기본 홈 앱으로 선택하세요.",
+      "novi_b_page4_setting_prompt": "홈 화면이 다르게 보일 수 있습니다. 홈 화면에서 \"홈 앱\"을 탭하면 언제든지 다른 홈 앱으로 전환할 수 있습니다.",
+      "novi_b_page4_default_home_prompt": "홈 화면으로 돌아올 때마다 게임 기능을 바로 사용할 수 있도록 %1$s을(를) 기본 홈 앱으로 설정하세요."
     },
     "pt": {
       "novi_set_as_default_launcher": "Definir como launcher padrão",
@@ -1129,7 +1192,16 @@
       "novi_help_faq_8_1": "Toque no botão abaixo para ver nossa política de privacidade.",
       "novi_help_faq_8_2": "Ver política de privacidade",
       "novi_help_faq_9_1": "Toque no botão abaixo para ver nossos termos de serviço.",
-      "novi_help_faq_9_2": "Ver termos de serviço"
+      "novi_help_faq_9_2": "Ver termos de serviço",
+      "novi_b_guid_1_tips_1": "ACESSO AOS SEUS JOGOS COM UM TOQUE",
+      "novi_b_guid_1_tips_2": "JORNADAS PERSONALIZADAS PELO MAPA",
+      "novi_b_guid_1_tips_3": "TELA INICIAL LIMPA E PERSONALIZADA",
+      "novi_loading_tips": "Estamos carregando os recursos do jogo.\\nAguarde um momento...",
+      "novi_continue": "Continuar",
+      "novi_skip_for_now": "Pular por enquanto",
+      "novi_page2_default_home_prompt": "Escolha %1$s como seu app de início padrão para manter suas ferramentas disponíveis sempre que você voltar à tela inicial.",
+      "novi_b_page4_setting_prompt": "Sua tela inicial pode parecer diferente. Você pode mudar para outro app de início a qualquer momento tocando em \"App de início\" na tela inicial.",
+      "novi_b_page4_default_home_prompt": "Defina %1$s como seu app de início padrão para manter suas ferramentas de jogo prontas sempre que você voltar à tela inicial."
     },
     "ru": {
       "novi_set_as_default_launcher": "Установить как лаунчер по умолчанию",
@@ -1270,7 +1342,16 @@
       "novi_help_faq_8_1": "Нажми кнопку ниже, чтобы ознакомиться с нашей политикой конфиденциальности.",
       "novi_help_faq_8_2": "Посмотреть политику конфиденциальности",
       "novi_help_faq_9_1": "Нажми кнопку ниже, чтобы ознакомиться с условиями использования.",
-      "novi_help_faq_9_2": "Посмотреть условия использования"
+      "novi_help_faq_9_2": "Посмотреть условия использования",
+      "novi_b_guid_1_tips_1": "ДОСТУП К ИГРАМ ОДНИМ КАСАНИЕМ",
+      "novi_b_guid_1_tips_2": "ПЕРСОНАЛЬНЫЕ ПУТЕШЕСТВИЯ ПО КАРТЕ",
+      "novi_b_guid_1_tips_3": "ЧИСТЫЙ И НАСТРАИВАЕМЫЙ ГЛАВНЫЙ ЭКРАН",
+      "novi_loading_tips": "Загружаем ресурсы игры.\\nПожалуйста, подождите немного...",
+      "novi_continue": "Продолжить",
+      "novi_skip_for_now": "Пропустить пока",
+      "novi_page2_default_home_prompt": "Выберите %1$s приложением главного экрана по умолчанию, чтобы его инструменты были доступны каждый раз, когда вы возвращаетесь на главный экран.",
+      "novi_b_page4_setting_prompt": "Главный экран может выглядеть иначе. В любой момент можно переключиться на другое приложение главного экрана, нажав «Приложение главного экрана» на главном экране.",
+      "novi_b_page4_default_home_prompt": "Установите %1$s приложением главного экрана по умолчанию, чтобы его игровые инструменты были готовы каждый раз, когда вы возвращаетесь на главный экран."
     },
     "vi": {
       "novi_set_as_default_launcher": "Đặt làm launcher mặc định",
@@ -1411,7 +1492,16 @@
       "novi_help_faq_8_1": "Nhấn nút bên dưới để xem chính sách bảo mật của chúng tôi.",
       "novi_help_faq_8_2": "Xem chính sách bảo mật",
       "novi_help_faq_9_1": "Nhấn nút bên dưới để xem điều khoản dịch vụ của chúng tôi.",
-      "novi_help_faq_9_2": "Xem điều khoản dịch vụ"
+      "novi_help_faq_9_2": "Xem điều khoản dịch vụ",
+      "novi_b_guid_1_tips_1": "TRUY CẬP TRÒ CHƠI CHỈ VỚI MỘT LẦN CHẠM",
+      "novi_b_guid_1_tips_2": "HÀNH TRÌNH BẢN ĐỒ CÁ NHÂN HÓA",
+      "novi_b_guid_1_tips_3": "MÀN HÌNH CHÍNH GỌN GÀNG, TÙY CHỈNH",
+      "novi_loading_tips": "Đang tải tài nguyên trò chơi.\\nVui lòng đợi một chút...",
+      "novi_continue": "Tiếp tục",
+      "novi_skip_for_now": "Bỏ qua lúc này",
+      "novi_page2_default_home_prompt": "Chọn %1$s làm ứng dụng màn hình chính mặc định để các công cụ của ứng dụng luôn khả dụng mỗi khi bạn quay lại màn hình chính.",
+      "novi_b_page4_setting_prompt": "Màn hình chính của bạn có thể trông khác. Bạn có thể chuyển sang ứng dụng màn hình chính khác bất cứ lúc nào bằng cách nhấn vào \"Ứng dụng màn hình chính\" trên màn hình chính.",
+      "novi_b_page4_default_home_prompt": "Đặt %1$s làm ứng dụng màn hình chính mặc định để các công cụ trò chơi luôn sẵn sàng mỗi khi bạn quay lại màn hình chính."
     }
   }
 }
