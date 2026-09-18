@@ -4,6 +4,7 @@ import com.example.lcb.music.model.MusicPlatform
 import net.corekit.core.report.ReportDataManager
 import net.corekit.core.report.ReporterData
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -65,7 +66,7 @@ class MusicAnalyticsTest {
     }
 
     @Test
-    fun `apply language sends non null value through report data manager`() {
+    fun `analytics entry does not dispatch events`() {
         val reporter = CapturingReporter()
         ReportDataManager.setReporters(listOf(reporter))
         try {
@@ -75,9 +76,7 @@ class MusicAnalyticsTest {
                 value = "de",
             )
 
-            assertEquals("music_settings_action", reporter.eventName)
-            assertEquals("apply_language", reporter.parameters["action"])
-            assertEquals("de", reporter.parameters["value"])
+            assertNull(reporter.eventName)
         } finally {
             ReportDataManager.setReporters(emptyList())
         }
@@ -85,17 +84,16 @@ class MusicAnalyticsTest {
 
     private class CapturingReporter : ReporterData {
         var eventName: String? = null
-        var parameters: Map<String, Any> = emptyMap()
 
         override fun getName() = "test"
 
         override fun reportData(eventName: String, data: Map<String, Any>) {
             this.eventName = eventName
-            parameters = data
         }
 
         override fun setCommonParams(params: Map<String, Any>) = Unit
 
         override fun setUserParams(params: Map<String, Any>) = Unit
     }
+
 }

@@ -44,7 +44,6 @@ okhttp = "4.12.0"
 opto = "1.0.18"
 palette = "1.0.0"
 persianDate = "1.7.1"
-playServicesAds = "24.9.0"
 preference = "1.2.1"
 profileinstaller = "1.4.1"
 protocVersion = "4.33.1"
@@ -59,7 +58,6 @@ uiautomator = "2.3.0"
 utilcodex = "1.31.1"
 window = "1.5.1"
 workRuntime = "2.9.0"
-adsMobileSdk = "0.22.0-beta04"
 
 agp = "8.13.1"
 baselineprofile = "1.4.1"
@@ -181,13 +179,11 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 android-desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "androidDesugar" }
 airbnb-lottie = { group = "com.airbnb.android", name = "lottie", version.ref = "airbnbLottie" }
 lottie = { group = "com.airbnb.android", name = "lottie", version.ref = "airbnbLottie" }
-ads-mobile-sdk = { group = "com.google.android.libraries.ads.mobile.sdk", name = "ads-mobile-sdk", version.ref = "adsMobileSdk" }
 junit = { group = "junit", name = "junit", version.ref = "junitCore" }
 chickenhook-restrictionbypass = { group = "com.github.ChickenHook", name = "RestrictionBypass", version.ref = "restrictionBypass" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 google-material = { group = "com.google.android.material", name = "material", version.ref = "googleMaterial" }
 material = { group = "com.google.android.material", name = "material", version.ref = "googleMaterial" }
-play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
 hoko-blur = { group = "io.github.hokofly", name = "hoko-blur", version.ref = "hokoBlur" }
 kdrag0n-colorkt = { group = "dev.kdrag0n", name = "colorkt", version.ref = "kdrag0nColorkt" }
 libsu-core = { group = "com.github.topjohnwu.libsu", name = "core", version.ref = "libsu" }
@@ -212,7 +208,6 @@ glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", versi
 
 # ReMax SDK
 remax-core = { group = "com.github.toukaremax", name = "core", version = "1.0.15" }
-remax-bill = { group = "com.github.toukaremax", name = "bill", version = "1.0.51" }
 
 [bundles]
 accompanist = ["accompanist-adaptive", "accompanist-drawablepainter", "accompanist-permissions"]

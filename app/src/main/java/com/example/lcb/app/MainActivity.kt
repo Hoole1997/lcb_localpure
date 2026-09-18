@@ -301,7 +301,8 @@ class MainActivity : AppCompatActivity(), HomeCallbacks {
 
     private fun configureBackNavigation() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() = LauncherSdkGateway.returnToLauncher()
+            // Launcher SDK 移除后恢复 Android 标准返回行为。
+            override fun handleOnBackPressed() = finish()
         })
     }
 

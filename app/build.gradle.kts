@@ -18,13 +18,6 @@ fun extraMap(name: String): Map<String, Any?> {
         ?: emptyMap()
 }
 
-@Suppress("UNCHECKED_CAST")
-fun Map<String, Any?>.nestedMap(name: String): Map<String, Any?> {
-    return (this[name] as? Map<*, *>)
-        ?.mapKeys { it.key.toString() }
-        ?: emptyMap()
-}
-
 fun Map<String, Any?>.stringValue(name: String, defaultValue: String = ""): String {
     return this[name]?.toString() ?: defaultValue
 }
@@ -92,14 +85,6 @@ fun googleServicesPackageName(flavor: String): String? {
 
 val appConfig = extraMap("app")
 val analyticsConfig = extraMap("analytics")
-val adMobConfig = extraMap("admob")
-val adMobUnitConfig = adMobConfig.nestedMap("adUnitIds")
-val gamConfig = extraMap("gam")
-val gamUnitConfig = gamConfig.nestedMap("adUnitIds")
-val pangleConfig = extraMap("pangle")
-val pangleUnitConfig = pangleConfig.nestedMap("adUnitIds")
-val toponConfig = extraMap("topon")
-val toponUnitConfig = toponConfig.nestedMap("adUnitIds")
 val legalConfig = extraMap("legal")
 
 val resolvedVersionName = appConfig.stringValue("versionName", "1.0.0")
@@ -174,39 +159,6 @@ android {
         buildConfigField("String", "PRIVACY_POLICY_URL", buildConfigString(legalConfig.stringValue("privacyPolicyUrl")))
         buildConfigField("String", "TERMS_OF_SERVICE_URL", buildConfigString(legalConfig.stringValue("termsOfServiceUrl")))
 
-        manifestPlaceholders["ADMOB_APPLICATION_ID"] = adMobConfig.stringValue("applicationId")
-
-        buildConfigField("String", "ADMOB_APPLICATION_ID", "\"${adMobConfig.stringValue("applicationId")}\"")
-        buildConfigField("String", "ADMOB_SPLASH_ID", "\"${adMobUnitConfig.stringValue("splash")}\"")
-        buildConfigField("String", "ADMOB_BANNER_ID", "\"${adMobUnitConfig.stringValue("banner")}\"")
-        buildConfigField("String", "ADMOB_INTERSTITIAL_ID", "\"${adMobUnitConfig.stringValue("interstitial")}\"")
-        buildConfigField("String", "ADMOB_NATIVE_ID", "\"${adMobUnitConfig.stringValue("native")}\"")
-        buildConfigField("String", "ADMOB_FULL_NATIVE_ID", "\"${adMobUnitConfig.stringValue("full_native")}\"")
-        buildConfigField("String", "ADMOB_REWARDED_ID", "\"${adMobUnitConfig.stringValue("rewarded")}\"")
-
-        buildConfigField("String", "GAM_SPLASH_ID", "\"${gamUnitConfig.stringValue("splash")}\"")
-        buildConfigField("String", "GAM_BANNER_ID", "\"${gamUnitConfig.stringValue("banner")}\"")
-        buildConfigField("String", "GAM_INTERSTITIAL_ID", "\"${gamUnitConfig.stringValue("interstitial")}\"")
-        buildConfigField("String", "GAM_NATIVE_ID", "\"${gamUnitConfig.stringValue("native")}\"")
-        buildConfigField("String", "GAM_FULL_NATIVE_ID", "\"${gamUnitConfig.stringValue("full_native")}\"")
-        buildConfigField("String", "GAM_REWARDED_ID", "\"${gamUnitConfig.stringValue("rewarded")}\"")
-
-        buildConfigField("String", "PANGLE_APPLICATION_ID", "\"${pangleConfig.stringValue("applicationId")}\"")
-        buildConfigField("String", "PANGLE_SPLASH_ID", "\"${pangleUnitConfig.stringValue("splash")}\"")
-        buildConfigField("String", "PANGLE_BANNER_ID", "\"${pangleUnitConfig.stringValue("banner")}\"")
-        buildConfigField("String", "PANGLE_INTERSTITIAL_ID", "\"${pangleUnitConfig.stringValue("interstitial")}\"")
-        buildConfigField("String", "PANGLE_NATIVE_ID", "\"${pangleUnitConfig.stringValue("native")}\"")
-        buildConfigField("String", "PANGLE_FULL_NATIVE_ID", "\"${pangleUnitConfig.stringValue("full_native")}\"")
-        buildConfigField("String", "PANGLE_REWARDED_ID", "\"${pangleUnitConfig.stringValue("rewarded")}\"")
-
-        buildConfigField("String", "TOPON_APPLICATION_ID", "\"${toponConfig.stringValue("applicationId")}\"")
-        buildConfigField("String", "TOPON_APP_KEY", "\"${toponConfig.stringValue("appKey")}\"")
-        buildConfigField("String", "TOPON_INTERSTITIAL_ID", "\"${toponUnitConfig.stringValue("interstitial")}\"")
-        buildConfigField("String", "TOPON_REWARDED_ID", "\"${toponUnitConfig.stringValue("rewarded")}\"")
-        buildConfigField("String", "TOPON_NATIVE_ID", "\"${toponUnitConfig.stringValue("native")}\"")
-        buildConfigField("String", "TOPON_SPLASH_ID", "\"${toponUnitConfig.stringValue("splash")}\"")
-        buildConfigField("String", "TOPON_FULL_NATIVE_ID", "\"${toponUnitConfig.stringValue("full_native")}\"")
-        buildConfigField("String", "TOPON_BANNER_ID", "\"${toponUnitConfig.stringValue("banner")}\"")
     }
 
     flavorDimensions += "channel"
@@ -347,18 +299,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation("androidx.room:room-testing:2.8.4")
 
-//    implementation(project(":bill"))
 //    implementation(project(":core"))
     implementation(project(":metrics"))
     implementation(project(":music-sdk"))
     implementation("com.github.toukaremax:core:1.0.15")
-    implementation("com.github.toukaremax:bill:1.0.51") {
-        // Launcher SDK provides com.unity3d.ads-mediation:mediation-sdk:9.2.0.
-        // Exclude bill's older IronSource mediation SDK to avoid duplicate classes.
-        exclude(group = "com.ironsource.sdk", module = "mediationsdk")
-    }
-    // 两个 Launcher SDK 含有相同包名的混淆类，必须按渠道隔离，不能同时进入一个 variant。
-    // Google 正式 SDK；Local 渠道继续使用独立测试 SDK。
-    add("googleImplementation", "com.launcher.unity:com.sonicpure.local.audio.tool-release:1.0.3")
-    add("localImplementation", "com.launcher.unity:com.leafmotivation.quizguessoncolor-LocalPure:1.0.0")
 }

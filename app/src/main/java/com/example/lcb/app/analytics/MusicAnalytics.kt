@@ -1,8 +1,6 @@
 package com.example.lcb.app.analytics
 
-import android.util.Log
 import com.example.lcb.music.model.MusicPlatform
-import net.corekit.core.report.ReportDataManager
 import java.util.Locale
 
 /**
@@ -223,16 +221,10 @@ internal object MusicAnalytics {
     private fun String?.normalizedSettingsValue(): String =
         this?.trim()?.takeIf(String::isNotEmpty)?.lowercase(Locale.ROOT) ?: SYSTEM_LANGUAGE_VALUE
 
-    private fun report(eventName: String, parameters: Map<String, Any>) {
-        try {
-            ReportDataManager.reportData(eventName, parameters)
-        } catch (error: Exception) {
-            // 埋点 SDK 的初始化或参数异常不能阻断用户操作；VM/OOM 等致命错误仍交给系统处理。
-            Log.w(TAG, "Unable to report analytics event: $eventName", error)
-        }
-    }
+    /** 埋点依赖已从业务链路解耦；保留入口以避免页面层散落条件分支。 */
+    @Suppress("UNUSED_PARAMETER")
+    private fun report(eventName: String, parameters: Map<String, Any>) = Unit
 
-    private const val TAG = "MusicAnalytics"
     private const val PLATFORM_LOCAL_OR_UNKNOWN = "local_or_unknown"
     private const val FALLBACK_PLAYBACK_ERROR_CODE = "500"
     private const val SYSTEM_LANGUAGE_VALUE = "system"

@@ -13,7 +13,7 @@ permissions:
   packages: read
 
 concurrency:
-  group: google-aab-main
+  group: google-aab-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -29,27 +29,25 @@ jobs:
       KEY_PASSWORD: google123456
       GRADLE_JVM_ARGS: -Xmx6144m -XX:MaxMetaspaceSize=1024m -XX:+UseParallelGC -Dfile.encoding=UTF-8
       KOTLIN_DAEMON_JVM_ARGS: -Xmx1024m
-      # Dedicated credentials are required because the Launcher SDK is hosted in another
-      # private GitHub Packages repository. Store both values as repository secrets so their
-      # configuration is consistent and neither credential is coupled to the workflow actor.
-      LAUNCHER_SDK_GITHUB_USER: ${{ secrets.LAUNCHER_SDK_GITHUB_USER }}
-      LAUNCHER_SDK_GITHUB_TOKEN: ${{ secrets.LAUNCHER_SDK_GITHUB_TOKEN }}
+      # Core SDK 仍托管在私有 ReMax GitHub Packages 仓库。复用现有
+      # Secrets 的值，但在 Gradle 侧使用与 Launcher 解耦后的通用变量名。
+      REMAX_SDK_GITHUB_USER: ${{ secrets.LAUNCHER_SDK_GITHUB_USER }}
+      REMAX_SDK_GITHUB_TOKEN: ${{ secrets.LAUNCHER_SDK_GITHUB_TOKEN }}
 
     steps:
-      - name: Verify Launcher SDK credentials
+      - name: Verify Core SDK credentials
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "${LAUNCHER_SDK_GITHUB_USER:-}" ] || [ -z "${LAUNCHER_SDK_GITHUB_TOKEN:-}" ]; then
-            echo "Missing Launcher SDK credentials." >&2
+          if [ -z "${REMAX_SDK_GITHUB_USER:-}" ] || [ -z "${REMAX_SDK_GITHUB_TOKEN:-}" ]; then
+            echo "Missing ReMax Core SDK credentials." >&2
             echo "Configure repository secrets LAUNCHER_SDK_GITHUB_USER and LAUNCHER_SDK_GITHUB_TOKEN." >&2
             exit 1
           fi
 
-      - name: Checkout main
+      - name: Checkout requested ref
         uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
 
       - name: Set up JDK 17
