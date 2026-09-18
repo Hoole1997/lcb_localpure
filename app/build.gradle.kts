@@ -300,7 +300,6 @@ dependencies {
     androidTestImplementation("androidx.room:room-testing:2.8.4")
 
 //    implementation(project(":core"))
-    implementation(project(":metrics"))
     implementation(project(":music-sdk"))
     implementation("com.github.toukaremax:core:1.0.15")
 }

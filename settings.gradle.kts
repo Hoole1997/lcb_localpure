@@ -49,5 +49,4 @@ dependencyResolutionManagement {
 rootProject.name = "LCB_OnlineMusic"
 include(":app")
 //include(":core")
-include(":metrics")
 include(":music-sdk")
